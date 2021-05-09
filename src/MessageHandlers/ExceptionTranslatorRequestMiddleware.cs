@@ -1,10 +1,10 @@
-﻿using System;
-using System.Net.Http;
-using System.Threading;
-using System.Threading.Tasks;
-
-namespace Simple.HttpClientFactory.MessageHandlers
+﻿namespace SimpleHCF.MessageHandlers
 {
+    using System;
+    using System.Net.Http;
+    using System.Threading;
+    using System.Threading.Tasks;
+
     internal sealed class ExceptionTranslatorRequestMiddleware : DelegatingHandler
     {
         private readonly Func<HttpRequestException, bool> _exceptionHandlingPredicate;

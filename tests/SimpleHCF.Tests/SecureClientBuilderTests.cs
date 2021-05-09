@@ -1,17 +1,18 @@
-﻿using Polly;
-using System;
-using System.Net;
-using System.Net.Http;
-using System.Security.Cryptography.X509Certificates;
-using System.Threading.Tasks;
-using FakeItEasy;
-using WireMock.RequestBuilders;
-using WireMock.ResponseBuilders;
-using WireMock.Server;
-using Xunit;
-
-namespace Simple.HttpClientFactory.Tests
+﻿namespace SimpleHCF.Tests
 {
+    using FakeItEasy;
+    using Polly;
+    using WireMock.RequestBuilders;
+    using WireMock.ResponseBuilders;
+    using WireMock.Server;
+    using Xunit;
+
+    using System;
+    using System.Net;
+    using System.Net.Http;
+    using System.Security.Cryptography.X509Certificates;
+    using System.Threading.Tasks;
+
     public sealed class SecureClientBuilderTests : IDisposable
     {
         private const string _endpointUri = "/hello/world";

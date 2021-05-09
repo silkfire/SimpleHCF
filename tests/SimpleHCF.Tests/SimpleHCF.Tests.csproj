@@ -1,14 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <UserSecretsId>b7cd72c5-d465-41ff-bd0a-fcd61802b52f</UserSecretsId>
-    <ProjectGuid>{1D95973D-CEE1-4F31-9E39-D8E22B4EB602}</ProjectGuid>
-  </PropertyGroup>
-
-  <PropertyGroup Condition=" '$(OS)' != 'Windows_NT' ">
-    <TargetFramework>netcoreapp5.0</TargetFramework>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(OS)' == 'Windows_NT' ">
-    <TargetFrameworks>netcoreapp5.0;net472</TargetFrameworks>
+    <TargetFrameworks>netcoreapp5.0</TargetFrameworks>
   </PropertyGroup>
 
   <ItemGroup>
@@ -22,9 +14,9 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="FakeItEasy" Version="7.0.1" />
+    <PackageReference Include="FakeItEasy" Version="7.0.2" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.9.4" />
-    <PackageReference Include="WireMock.Net" Version="1.4.9" />
+    <PackageReference Include="WireMock.Net" Version="1.4.13" />
     <PackageReference Include="xunit" Version="2.4.1" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.4.3">
       <PrivateAssets>all</PrivateAssets>
@@ -36,13 +28,8 @@
     </PackageReference>
   </ItemGroup>
 
-  <ItemGroup Condition="'$(TargetFramework)' == 'net472'">
-    <PackageReference Include="System.Net.Http" Version="4.3.4" />
-    <PackageReference Include="System.Net.Security" Version="4.3.2" />
-  </ItemGroup>
-
   <ItemGroup>
-    <ProjectReference Include="..\Simple.HttpClientFactory\Simple.HttpClientFactory.csproj" />
+    <ProjectReference Include="..\..\src\SimpleHCF.csproj" />
   </ItemGroup>
 
 </Project>

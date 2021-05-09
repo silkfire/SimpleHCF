@@ -1,4 +1,4 @@
-﻿namespace Simple.HttpClientFactory.Tests.MessageHandlers
+﻿namespace SimpleHCF.Tests.MessageHandlers
 {
     using System.Collections.Generic;
     using System.Net.Http;

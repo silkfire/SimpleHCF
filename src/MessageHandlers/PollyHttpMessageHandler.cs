@@ -1,11 +1,14 @@
-﻿using System.Net.Http;
-using System.Threading;
-using System.Threading.Tasks;
-using Polly;
-
-namespace Simple.HttpClientFactory.MessageHandlers
+﻿namespace SimpleHCF.MessageHandlers
 {
-   internal sealed class PollyMessageMiddleware : DelegatingHandler
+    using SimpleHCF;
+
+    using Polly;
+
+    using System.Net.Http;
+    using System.Threading;
+    using System.Threading.Tasks;
+
+    internal sealed class PollyMessageMiddleware : DelegatingHandler
     {
         private readonly IAsyncPolicy<HttpResponseMessage> _policy;
 
@@ -47,14 +50,13 @@ namespace Simple.HttpClientFactory.MessageHandlers
 
             return responseTask;
 
-            Context GetOrCreatePolicyExecutionContext(HttpRequestMessage httpRequestMessage, ref bool shouldCleanupContext)
+            static Context GetOrCreatePolicyExecutionContext(HttpRequestMessage httpRequestMessage, ref bool shouldCleanupContext)
             {
-                if (!httpRequestMessage.TryGetPolicyExecutionContext(out var fetchedContext))
-                {
-                    fetchedContext = new Context();
-                    httpRequestMessage.SetPolicyExecutionContext(fetchedContext);
-                    shouldCleanupContext = true;
-                }
+                if (httpRequestMessage.TryGetPolicyExecutionContext(out var fetchedContext)) return fetchedContext;
+
+                fetchedContext = new Context();
+                httpRequestMessage.SetPolicyExecutionContext(fetchedContext);
+                shouldCleanupContext = true;
 
                 return fetchedContext;
             }

@@ -1,11 +1,12 @@
-﻿using Polly;
-using System;
-using System.Collections.Generic;
-using System.Net.Http;
-using System.Security.Cryptography.X509Certificates;
-
-namespace Simple.HttpClientFactory
+﻿namespace SimpleHCF
 {
+    using Polly;
+
+    using System;
+    using System.Collections.Generic;
+    using System.Net.Http;
+    using System.Security.Cryptography.X509Certificates;
+
     /// <summary>
     /// Defines a factory for producing pre-configured <see cref="HttpClient"/> instances.
     /// </summary>
@@ -80,7 +81,6 @@ namespace Simple.HttpClientFactory
         /// <remarks>This adds a call to <see cref="HttpResponseMessage.EnsureSuccessStatusCode"/>, thus ensuring that <see cref="HttpRequestException"/> will get thrown on a non-success response.</remarks>
         IHttpClientBuilder WithMessageExceptionHandler(Func<HttpRequestException, bool> exceptionHandlingPredicate, Func<HttpRequestException, Exception> exceptionHandler, EventHandler<HttpRequestException> requestExceptionEventHandler = null, EventHandler<Exception> transformedRequestExceptionEventHandler = null);
 
-#if NETCOREAPP2_1_OR_GREATER
         /// <summary>
         /// Configures the primary message handler before the client is instantiated.
         /// </summary>
@@ -98,24 +98,5 @@ namespace Simple.HttpClientFactory
         /// </summary>
         /// <param name="defaultPrimaryMessageHandler">The message handler to substitute the default primary message handler with.</param>
         HttpClient Build(SocketsHttpHandler defaultPrimaryMessageHandler);
-#else
-        /// <summary>
-        /// Configures the primary message handler before the client is instantiated.
-        /// </summary>
-        /// <param name="configurator">A delegate to configure the primary message handler before the client is instantiated.</param>
-        IHttpClientBuilder WithPrimaryMessageHandlerConfigurator(Action<HttpClientHandler> configurator);
-
-        /// <summary>
-        /// Instantiates the HTTP client, optionally providing additional configuration to its primary message handler.
-        /// </summary>
-        /// <param name="configurator">Configure the primary message handler before the client is instantiated.</param>
-        HttpClient Build(Action<HttpClientHandler> configurator = null);
-
-        /// <summary>
-        /// Instantiates the HTTP client, substituting the default primary message handler with the specified one.
-        /// </summary>
-        /// <param name="defaultPrimaryMessageHandler">The message handler to substitute the default primary message handler with.</param>
-        HttpClient Build(HttpClientHandler defaultPrimaryMessageHandler);
-#endif
     }
 }

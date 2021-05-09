@@ -1,19 +1,21 @@
-﻿using Simple.HttpClientFactory.Tests.MessageHandlers;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
-using System.Net.Http;
-using System.Reflection;
-using System.Threading.Tasks;
-using FakeItEasy;
-using WireMock.RequestBuilders;
-using WireMock.ResponseBuilders;
-using WireMock.Server;
-using Xunit;
-
-namespace Simple.HttpClientFactory.Tests
+﻿namespace SimpleHCF.Tests
 {
+    using MessageHandlers;
+
+    using FakeItEasy;
+    using WireMock.RequestBuilders;
+    using WireMock.ResponseBuilders;
+    using WireMock.Server;
+    using Xunit;
+
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Net;
+    using System.Net.Http;
+    using System.Reflection;
+    using System.Threading.Tasks;
+
     public class MiddlewareDelegateTests
     {
         private const string _endpointUri = "/hello/world";

@@ -1,18 +1,19 @@
-﻿using Polly;
-using Polly.Timeout;
-using System;
-using System.Linq;
-using System.Net;
-using System.Net.Http;
-using System.Threading.Tasks;
-using FakeItEasy;
-using WireMock.RequestBuilders;
-using WireMock.ResponseBuilders;
-using WireMock.Server;
-using Xunit;
-
-namespace Simple.HttpClientFactory.Tests
+﻿namespace SimpleHCF.Tests
 {
+    using FakeItEasy;
+    using Polly;
+    using Polly.Timeout;
+    using WireMock.RequestBuilders;
+    using WireMock.ResponseBuilders;
+    using WireMock.Server;
+    using Xunit;
+
+    using System;
+    using System.Linq;
+    using System.Net;
+    using System.Net.Http;
+    using System.Threading.Tasks;
+
     public class PolicyTests
     {
         private const string _endpointUri = "/hello/world";
@@ -86,13 +87,13 @@ namespace Simple.HttpClientFactory.Tests
 		{
 			//timeout after 2 seconds, then retry
 			var clientWithRetry = HttpClientFactory.Create()
-				.WithPolicy(
-    					Policy<HttpResponseMessage>
-                            .Handle<HttpRequestException>()
-                            .OrResult(result => result.StatusCode >= HttpStatusCode.InternalServerError || result.StatusCode == HttpStatusCode.RequestTimeout)
-							.WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(1)))
-				.WithPolicy(Policy.TimeoutAsync<HttpResponseMessage>(TimeSpan.FromSeconds(4), TimeoutStrategy.Optimistic))
-				.Build();
+                                        .WithPolicy(
+                                                    Policy<HttpResponseMessage>
+                                                        .Handle<HttpRequestException>()
+                                                        .OrResult(result => result.StatusCode >= HttpStatusCode.InternalServerError || result.StatusCode == HttpStatusCode.RequestTimeout)
+                                                        .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(1)))
+                                        .WithPolicy(Policy.TimeoutAsync<HttpResponseMessage>(TimeSpan.FromSeconds(4), TimeoutStrategy.Optimistic))
+                                        .Build();
 
 			var responseWithTimeout = await clientWithRetry.GetAsync($"{_server.Urls[0]}{_endpointUriTimeout}");
 			Assert.Equal(4, _server.LogEntries.Count());
@@ -103,14 +104,14 @@ namespace Simple.HttpClientFactory.Tests
 		public async Task Client_with_retry_that_wraps_timeout_policy_should_properly_apply_policies()
 		{
 			var clientWithRetry = HttpClientFactory.Create()
-				.WithPolicy(
-				Policy.WrapAsync(
-					Policy.TimeoutAsync<HttpResponseMessage>(25),
-    					Policy<HttpResponseMessage>
-                            .Handle<HttpRequestException>()
-                            .OrResult(result => result.StatusCode >= HttpStatusCode.InternalServerError || result.StatusCode == HttpStatusCode.RequestTimeout)
-							.WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(1))))
-				.Build();
+                                        .WithPolicy(
+                                                    Policy.WrapAsync(
+                                                                     Policy.TimeoutAsync<HttpResponseMessage>(25),
+                                                                     Policy<HttpResponseMessage>
+                                                                         .Handle<HttpRequestException>()
+                                                                         .OrResult(result => result.StatusCode >= HttpStatusCode.InternalServerError || result.StatusCode == HttpStatusCode.RequestTimeout)
+                                                                         .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(1))))
+                                        .Build();
 
 			var response = await clientWithRetry.GetAsync($"{_server.Urls[0]}{_endpointUriTimeout}");
 			Assert.Equal(4, _server.LogEntries.Count());
@@ -134,12 +135,12 @@ namespace Simple.HttpClientFactory.Tests
         public async Task Retry_policy_should_work()
         {
 			var clientWithRetry = HttpClientFactory.Create()
-				.WithPolicy(
-    					Policy<HttpResponseMessage>
-                            .Handle<HttpRequestException>()
-                            .OrResult(result => result.StatusCode >= HttpStatusCode.InternalServerError || result.StatusCode == HttpStatusCode.RequestTimeout)
-						.WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(1)))
-				.Build();
+                                        .WithPolicy(
+                                                    Policy<HttpResponseMessage>
+                                                        .Handle<HttpRequestException>()
+                                                        .OrResult(result => result.StatusCode >= HttpStatusCode.InternalServerError || result.StatusCode == HttpStatusCode.RequestTimeout)
+                                                        .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(1)))
+                                        .Build();
 
 			var response = await clientWithRetry.GetAsync($"{_server.Urls[0]}{_endpointUri}");
             

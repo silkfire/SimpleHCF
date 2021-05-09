@@ -1,17 +1,17 @@
-﻿using Simple.HttpClientFactory.MessageHandlers;
-using Polly;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.Http;
-#if NETCOREAPP2_1_OR_GREATER
-using System.Net.Security;
-#endif
-using System.Runtime.CompilerServices;
-using System.Security.Cryptography.X509Certificates;
-
-namespace Simple.HttpClientFactory
+﻿namespace SimpleHCF
 {
+    using MessageHandlers;
+
+    using Polly;
+
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Net.Http;
+    using System.Net.Security;
+    using System.Runtime.CompilerServices;
+    using System.Security.Cryptography.X509Certificates;
+
     internal class HttpClientBuilder : IHttpClientBuilder
     {        
         private Uri _baseUrl;
@@ -20,11 +20,7 @@ namespace Simple.HttpClientFactory
         private readonly List<IAsyncPolicy<HttpResponseMessage>> _policies = new List<IAsyncPolicy<HttpResponseMessage>>();
         private TimeSpan? _timeout;
         private readonly List<DelegatingHandler> _middlewareHandlers = new List<DelegatingHandler>();
-#if NETCOREAPP2_1_OR_GREATER
         private Action<SocketsHttpHandler> _primaryMessageHandlerConfigurator;
-#else
-        private Action<HttpClientHandler> _primaryMessageHandlerConfigurator;
-#endif
 
         public IHttpClientBuilder WithBaseUrl(string baseUrl)
         {
@@ -154,8 +150,6 @@ namespace Simple.HttpClientFactory
                                                               EventHandler<HttpRequestException> requestExceptionEventHandler = null,
                                                               EventHandler<Exception> transformedRequestExceptionEventHandler = null) => WithMessageHandler(new ExceptionTranslatorRequestMiddleware(exceptionHandlingPredicate, exceptionHandler, requestExceptionEventHandler, transformedRequestExceptionEventHandler));
 
-#if NETCOREAPP2_1_OR_GREATER
-
         public IHttpClientBuilder WithPrimaryMessageHandlerConfigurator(Action<SocketsHttpHandler> configurator)
         {
             _primaryMessageHandlerConfigurator = configurator ?? throw new ArgumentNullException(nameof(configurator));
@@ -221,64 +215,6 @@ namespace Simple.HttpClientFactory
             _primaryMessageHandlerConfigurator?.Invoke(primaryMessageHandler);
         }
 
-#else
-
-        public IHttpClientBuilder WithPrimaryMessageHandlerConfigurator(Action<HttpClientHandler> configurator)
-        {
-            _primaryMessageHandlerConfigurator = configurator ?? throw new ArgumentNullException(nameof(configurator));
-
-            return this;
-        }
-
-        public HttpClient Build(HttpClientHandler defaultPrimaryMessageHandler)
-        {
-            if (defaultPrimaryMessageHandler == null) throw new ArgumentNullException(nameof(defaultPrimaryMessageHandler));
-
-            InitializePrimaryMessageHandler(defaultPrimaryMessageHandler, out var rootPolicyHandler);
-
-            return ConstructClientWithMiddleware(defaultPrimaryMessageHandler, rootPolicyHandler);
-        }
-
-        public HttpClient Build(Action<HttpClientHandler> configurator = null)
-        {
-            var primaryMessageHandler = new HttpClientHandlerEx();
-
-            InitializePrimaryMessageHandler(primaryMessageHandler, out var rootPolicyHandler);
-
-            configurator?.Invoke(primaryMessageHandler);
-            var client = ConstructClientWithMiddleware(primaryMessageHandler, rootPolicyHandler);
-            
-            if (_timeout.HasValue)
-                client.Timeout = _timeout.Value;
-
-            return client;
-        }
-
-        private void InitializePrimaryMessageHandler(HttpClientHandler primaryMessageHandler, out PollyMessageMiddleware rootPolicyHandler)
-        {
-            if (_certificates.Count > 0)
-            {
-                for (int i = 0; i < _certificates.Count; i++)
-                    primaryMessageHandler.ClientCertificates.Add(_certificates[i]);
-            }
-
-
-            rootPolicyHandler = null;
-            for (int i = 0; i < _policies.Count; i++)
-            {
-                if (rootPolicyHandler == null)
-                    rootPolicyHandler = new PollyMessageMiddleware(_policies[i], primaryMessageHandler);
-                else
-                {
-                    var @new = new PollyMessageMiddleware(_policies[i], rootPolicyHandler);
-
-                    rootPolicyHandler = @new;
-                }
-            }
-
-            _primaryMessageHandlerConfigurator?.Invoke(primaryMessageHandler);
-        }
-#endif
         private HttpClient ConstructClientWithMiddleware<TPrimaryMessageHandler>(TPrimaryMessageHandler primaryMessageHandler, PollyMessageMiddleware rootPolicyHandler)
             where TPrimaryMessageHandler : HttpMessageHandler
         {

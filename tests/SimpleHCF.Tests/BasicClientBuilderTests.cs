@@ -1,20 +1,19 @@
-#if NET472
-using Simple.HttpClientFactory.MessageHandlers;
-#endif
-using Simple.HttpClientFactory.Tests.MessageHandlers;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
-using System.Net.Http;
-using System.Threading.Tasks;
-using WireMock.RequestBuilders;
-using WireMock.ResponseBuilders;
-using WireMock.Server;
-using Xunit;
-
-namespace Simple.HttpClientFactory.Tests
+namespace SimpleHCF.Tests
 {
+    using MessageHandlers;
+
+    using WireMock.RequestBuilders;
+    using WireMock.ResponseBuilders;
+    using WireMock.Server;
+    using Xunit;
+
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Net;
+    using System.Net.Http;
+    using System.Threading.Tasks;
+
     public sealed class BasicClientBuilderTests : IDisposable
     {
         private const string _endpointUri = "/hello/world";
@@ -136,10 +135,10 @@ namespace Simple.HttpClientFactory.Tests
             var trafficRecorder = new TrafficRecorderMessageHandler(new List<string>());
 
             var client = HttpClientFactory
-                .Create()
-                .WithDefaultHeaders(new Dictionary<string, string> { [headerName] = headerValue })
-                .WithMessageHandler(trafficRecorder)
-                .Build();
+                               .Create()
+                               .WithDefaultHeaders(new Dictionary<string, string> { [headerName] = headerValue })
+                               .WithMessageHandler(trafficRecorder)
+                               .Build();
 
             _ = await client.GetAsync($"{_server.Urls[0]}{_endpointUri}");
 

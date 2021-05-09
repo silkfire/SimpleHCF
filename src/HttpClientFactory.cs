@@ -1,8 +1,8 @@
-﻿using System;
-using System.Net.Http;
-
-namespace Simple.HttpClientFactory
+﻿namespace SimpleHCF
 {
+    using System;
+    using System.Net.Http;
+
     //credit: some code is adapted from https://github.com/NimaAra/Easy.Common/blob/master/Easy.Common/RestClient.cs
     /// <summary>
     /// Provides static methods for creating a factory that produces pre-configured <see cref="HttpClient"/> instances.

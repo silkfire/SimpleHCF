@@ -1,19 +1,21 @@
-﻿using Simple.HttpClientFactory.Tests.MessageHandlers;
-using Polly;
-using Polly.Timeout;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
-using System.Net.Http;
-using System.Threading.Tasks;
-using WireMock.RequestBuilders;
-using WireMock.ResponseBuilders;
-using WireMock.Server;
-using Xunit;
-
-namespace Simple.HttpClientFactory.Tests
+﻿namespace SimpleHCF.Tests
 {
+    using MessageHandlers;
+
+    using Polly;
+    using Polly.Timeout;
+    using WireMock.RequestBuilders;
+    using WireMock.ResponseBuilders;
+    using WireMock.Server;
+    using Xunit;
+
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Net;
+    using System.Net.Http;
+    using System.Threading.Tasks;
+
     public class MiddlewareAndPolicyTests
     {
         private const string _endpointUri = "/hello/world";
@@ -61,15 +63,15 @@ namespace Simple.HttpClientFactory.Tests
 
             //timeout after 2 seconds, then retry
             var clientWithRetry = HttpClientFactory.Create()
-                .WithPolicy(
-                    Policy<HttpResponseMessage>
-                        .Handle<HttpRequestException>()
-                        .OrResult(result => result.StatusCode >= HttpStatusCode.InternalServerError || result.StatusCode == HttpStatusCode.RequestTimeout)
-                        .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(1)))
-                .WithPolicy(
-                    Policy.TimeoutAsync<HttpResponseMessage>(TimeSpan.FromSeconds(4), TimeoutStrategy.Optimistic))
-                .WithMessageHandler(eventMessageHandler)
-                .Build();
+                                                   .WithPolicy(
+                                                               Policy<HttpResponseMessage>
+                                                                   .Handle<HttpRequestException>()
+                                                                   .OrResult(result => result.StatusCode >= HttpStatusCode.InternalServerError || result.StatusCode == HttpStatusCode.RequestTimeout)
+                                                                   .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(1)))
+                                                   .WithPolicy(
+                                                               Policy.TimeoutAsync<HttpResponseMessage>(TimeSpan.FromSeconds(4), TimeoutStrategy.Optimistic))
+                                                   .WithMessageHandler(eventMessageHandler)
+                                                   .Build();
 
             Task<HttpResponseMessage> responseTask = null;
 
@@ -95,16 +97,16 @@ namespace Simple.HttpClientFactory.Tests
 
             //timeout after 2 seconds, then retry
             var clientWithRetry = HttpClientFactory.Create()
-                .WithPolicy(
-                    Policy<HttpResponseMessage>
-                        .Handle<HttpRequestException>()
-                        .OrResult(result => result.StatusCode >= HttpStatusCode.InternalServerError || result.StatusCode == HttpStatusCode.RequestTimeout)
-                        .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(1)))
-                .WithPolicy(
-                    Policy.TimeoutAsync<HttpResponseMessage>(TimeSpan.FromSeconds(4), TimeoutStrategy.Optimistic))
-                .WithMessageHandler(eventMessageHandler)
-                .WithMessageHandler(trafficRecorderMessageHandler)
-                .Build();
+                                                   .WithPolicy(
+                                                               Policy<HttpResponseMessage>
+                                                                   .Handle<HttpRequestException>()
+                                                                   .OrResult(result => result.StatusCode >= HttpStatusCode.InternalServerError || result.StatusCode == HttpStatusCode.RequestTimeout)
+                                                                   .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(1)))
+                                                   .WithPolicy(
+                                                               Policy.TimeoutAsync<HttpResponseMessage>(TimeSpan.FromSeconds(4), TimeoutStrategy.Optimistic))
+                                                   .WithMessageHandler(eventMessageHandler)
+                                                   .WithMessageHandler(trafficRecorderMessageHandler)
+                                                   .Build();
 
             Task<HttpResponseMessage> responseTask = null;
 
@@ -132,14 +134,14 @@ namespace Simple.HttpClientFactory.Tests
             var eventMessageHandler = new EventMessageHandler(visitedMiddleware);
 
             var clientWithRetry = HttpClientFactory.Create()
-                .WithPolicy(
-                    Policy<HttpResponseMessage>
-                        .Handle<HttpRequestException>()
-                        .OrResult(result => result.StatusCode >= HttpStatusCode.InternalServerError || result.StatusCode == HttpStatusCode.RequestTimeout)
-                        .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(1)))
-                .WithMessageHandler(eventMessageHandler)
-                .WithMessageHandler(trafficRecorderMessageHandler)
-                .Build();
+                                                   .WithPolicy(
+                                                               Policy<HttpResponseMessage>
+                                                                   .Handle<HttpRequestException>()
+                                                                   .OrResult(result => result.StatusCode >= HttpStatusCode.InternalServerError || result.StatusCode == HttpStatusCode.RequestTimeout)
+                                                                   .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(1)))
+                                                   .WithMessageHandler(eventMessageHandler)
+                                                   .WithMessageHandler(trafficRecorderMessageHandler)
+                                                   .Build();
 
             Task<HttpResponseMessage> responseTask = null;
 
@@ -167,13 +169,13 @@ namespace Simple.HttpClientFactory.Tests
         {
             var eventMessageHandler = new EventMessageHandler(new List<string>());
             var clientWithRetry = HttpClientFactory.Create()
-                .WithPolicy(
-                    Policy<HttpResponseMessage>
-                        .Handle<HttpRequestException>()
-                        .OrResult(result => result.StatusCode >= HttpStatusCode.InternalServerError || result.StatusCode == HttpStatusCode.RequestTimeout)
-                        .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(1)))
-                .WithMessageHandler(eventMessageHandler)
-                .Build();
+                                                   .WithPolicy(
+                                                               Policy<HttpResponseMessage>
+                                                                   .Handle<HttpRequestException>()
+                                                                   .OrResult(result => result.StatusCode >= HttpStatusCode.InternalServerError || result.StatusCode == HttpStatusCode.RequestTimeout)
+                                                                   .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(1)))
+                                                   .WithMessageHandler(eventMessageHandler)
+                                                   .Build();
 
             Task<HttpResponseMessage> responseTask = null;
 

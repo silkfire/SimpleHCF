@@ -1,6 +1,10 @@
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=myarichuk_Simple.HttpClientFactory&metric=alert_status)](https://sonarcloud.io/dashboard?id=myarichuk_Simple.HttpClientFactory)
 [![Nuget](https://img.shields.io/nuget/v/Simple.HttpClientFactory?color=light-green)  ](https://www.nuget.org/packages/Simple.HttpClientFactory/)
 
+### 👁‍🗨 NOTE: This library requires your project to target **.NET 5** or higher in order to work.
+
+---
+
 ### The Why?
 A first question would be - why create another factory for ``HttpClient`` if Microsoft have already created an excellent library in ``Microsoft.Http.Extensions``?
 (take a look at this [documentation article](https://docs.microsoft.com/en-us/dotnet/architecture/microservices/implement-resilient-applications/use-httpclientfactory-to-implement-resilient-http-requests) to learn more)  
