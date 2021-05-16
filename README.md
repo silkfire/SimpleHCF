@@ -28,11 +28,12 @@ Using the client factory is simple, and pretty self-explanatory. Here is how ``H
 
 ```cs
 public HttpClient CreateClient() =>
-    HttpClientFactory.Create()
+    HttpClientFactoryBuilder.Create()
                      .WithCertificate(DefaultDevCert.Get())         // configure with one or more X509Certificate2 instances
                      .WithPolicy(Policy<HttpResponseMessage>.Handle<HttpRequestException>()
                                                             .OrResult(result => result.StatusCode >= HttpStatusCode.InternalServerError || result.StatusCode == HttpStatusCode.RequestTimeout)
                                                             .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(1)))
-                     .Build();
+                     .Build()
+                     .Create();
 
 ```
