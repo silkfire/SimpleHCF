@@ -1,7 +1,12 @@
-[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=myarichuk_Simple.HttpClientFactory&metric=alert_status)](https://sonarcloud.io/dashboard?id=myarichuk_Simple.HttpClientFactory)
-[![Nuget](https://img.shields.io/nuget/v/Simple.HttpClientFactory?color=light-green)  ](https://www.nuget.org/packages/Simple.HttpClientFactory/)
+# SimpleHCF
 
-### 👁‍🗨 NOTE: This library requires your project to target **.NET 5** or higher in order to work.
+![logo](https://github.com/silkfire/SimpleHCF/raw/master/img/logo.png)
+
+[![NuGet](https://img.shields.io/nuget/v/SimpleHCF.svg)](https://www.nuget.org/packages/SimpleHCF)
+
+A lightweight `HttpClient` factory that properly handles DNS changes and closely integrates Polly policies into the client.
+
+### 👁‍🗨 NOTE: This library requires your project to target **.NET 5** or higher.
 
 ---
 

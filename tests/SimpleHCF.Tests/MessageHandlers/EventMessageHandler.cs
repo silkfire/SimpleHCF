@@ -24,13 +24,13 @@
         /// <summary>
         /// Defines the _visitedMiddleware.
         /// </summary>
-        private readonly List<string> _visitedMiddleware;
+        private readonly IList<string> _visitedMiddleware;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="EventMessageHandler"/> class.
         /// </summary>
-        /// <param name="visitedMiddleware">The visitedMiddleware<see cref="List{string}"/>.</param>
-        public EventMessageHandler(List<string> visitedMiddleware) => _visitedMiddleware = visitedMiddleware;
+        /// <param name="visitedMiddleware">A list containing the names of visited middleware. This list will continue to expand on every middleware visit.</param>
+        public EventMessageHandler(IList<string> visitedMiddleware) => _visitedMiddleware = visitedMiddleware;
 
         /// <summary>
         /// Defines the <see cref="RequestEventArgs" />.

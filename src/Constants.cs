@@ -4,7 +4,10 @@
 
     internal static class Constants
     {
-        public static readonly TimeSpan ConnectionLifeTime = TimeSpan.FromMinutes(1);
+        /// <summary>
+        /// 2 minutes.
+        /// </summary>
+        public static readonly TimeSpan ConnectionLifetime = TimeSpan.FromMinutes(2);
         public const int MaxConnectionsPerServer = 20;
     }
 }

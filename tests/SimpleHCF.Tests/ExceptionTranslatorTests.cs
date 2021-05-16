@@ -51,14 +51,14 @@
         [Fact]
         public void Exception_message_handler_ctor_should_validate_first_param()
         {
-            var exception = Assert.Throws<ArgumentNullException>(() => HttpClientFactory.Create().WithMessageExceptionHandler(null, e => e));
+            var exception = Assert.Throws<ArgumentNullException>(() => HttpClientFactoryBuilder.Create().WithMessageExceptionHandler(null, e => e));
             Assert.Equal("exceptionHandlingPredicate", exception.ParamName);
         }
 
         [Fact]
         public void Exception_message_handler_ctor_should_validate_second_param()
         {
-            var exception = Assert.Throws<ArgumentNullException>(() => HttpClientFactory.Create().WithMessageExceptionHandler(e => true, null));
+            var exception = Assert.Throws<ArgumentNullException>(() => HttpClientFactoryBuilder.Create().WithMessageExceptionHandler(e => true, null));
             Assert.Equal("exceptionHandler", exception.ParamName);
         }
 
@@ -67,9 +67,10 @@
         {
             var requestExceptionEventHandler = A.Fake<EventHandler<HttpRequestException>>();
 
-            var client = HttpClientFactory.Create()
-                               .WithMessageExceptionHandler(ex => true, ex => ex, requestExceptionEventHandler)
-                               .Build();
+            var client = HttpClientFactoryBuilder.Create()
+                                                 .WithMessageExceptionHandler(ex => true, ex => ex, requestExceptionEventHandler)
+                                                 .Build()
+                                                 .CreateClient();
 
             await Assert.ThrowsAsync<HttpRequestException>(() => client.GetAsync($"{_server.Urls[0]}{_endpointUriTimeout}"));
 
@@ -82,15 +83,16 @@
         {
             var transformedRequestExceptionEventHandler = A.Fake<EventHandler<Exception>>();
 
-            var clientWithRetry = HttpClientFactory.Create()
-                                        .WithMessageExceptionHandler(ex => true, ex => new TestException(ex.Message), null, transformedRequestExceptionEventHandler)
-                                        .WithPolicy(
-                                                    Policy<HttpResponseMessage>
-                                                        .Handle<HttpRequestException>()
-                                                        .OrResult(result => result.StatusCode >= HttpStatusCode.InternalServerError || result.StatusCode == HttpStatusCode.RequestTimeout)
-                                                        .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(1)))
-                                        .WithPolicy(Policy.TimeoutAsync<HttpResponseMessage>(TimeSpan.FromSeconds(4), TimeoutStrategy.Optimistic))
-                                        .Build();
+            var clientWithRetry = HttpClientFactoryBuilder.Create()
+                                                          .WithMessageExceptionHandler(ex => true, ex => new TestException(ex.Message), null, transformedRequestExceptionEventHandler)
+                                                          .WithPolicy(
+                                                                      Policy<HttpResponseMessage>
+                                                                          .Handle<HttpRequestException>()
+                                                                          .OrResult(result => result.StatusCode >= HttpStatusCode.InternalServerError || result.StatusCode == HttpStatusCode.RequestTimeout)
+                                                                          .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(1)))
+                                                          .WithPolicy(Policy.TimeoutAsync<HttpResponseMessage>(TimeSpan.FromSeconds(4), TimeoutStrategy.Optimistic))
+                                                          .Build()
+                                                          .CreateClient();
 
             await Assert.ThrowsAsync<TestException>(() => clientWithRetry.GetAsync($"{_server.Urls[0]}{_endpointUriTimeout}"));
             Assert.Equal(4, _server.LogEntries.Count());
@@ -103,15 +105,16 @@
             var requestExceptionEventHandler            = A.Fake<EventHandler<HttpRequestException>>();
             var transformedRequestExceptionEventHandler = A.Fake<EventHandler<Exception>>();
 
-            var clientWithRetry = HttpClientFactory.Create()
-                                        .WithMessageExceptionHandler(ex => true, ex => null as Exception, requestExceptionEventHandler, transformedRequestExceptionEventHandler)
-                                        .WithPolicy(
-                                                    Policy<HttpResponseMessage>
-                                                        .Handle<HttpRequestException>()
-                                                        .OrResult(result => result.StatusCode >= HttpStatusCode.InternalServerError || result.StatusCode == HttpStatusCode.RequestTimeout)
-                                                        .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(1)))
-                                        .WithPolicy(Policy.TimeoutAsync<HttpResponseMessage>(TimeSpan.FromSeconds(4), TimeoutStrategy.Optimistic))
-                                        .Build();
+            var clientWithRetry = HttpClientFactoryBuilder.Create()
+                                                          .WithMessageExceptionHandler(ex => true, ex => null as Exception, requestExceptionEventHandler, transformedRequestExceptionEventHandler)
+                                                          .WithPolicy(
+                                                                      Policy<HttpResponseMessage>
+                                                                          .Handle<HttpRequestException>()
+                                                                          .OrResult(result => result.StatusCode >= HttpStatusCode.InternalServerError || result.StatusCode == HttpStatusCode.RequestTimeout)
+                                                                          .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(1)))
+                                                          .WithPolicy(Policy.TimeoutAsync<HttpResponseMessage>(TimeSpan.FromSeconds(4), TimeoutStrategy.Optimistic))
+                                                          .Build()
+                                                          .CreateClient();
 
             var exception = await Assert.ThrowsAsync<Exception>(() => clientWithRetry.GetAsync($"{_server.Urls[0]}{_endpointUriTimeout}"));
 
@@ -127,10 +130,11 @@
             var requestExceptionEventHandler = A.Fake<EventHandler<HttpRequestException>>();
             var transformedRequestExceptionEventHandler = A.Fake<EventHandler<Exception>>();
 
-            var client = HttpClientFactory.Create()
-                               .WithMessageExceptionHandler(ex => true, ex => null as Exception, requestExceptionEventHandler, transformedRequestExceptionEventHandler)
-                               .WithMessageHandler(new OfflineMessageHandler())
-                               .Build();
+            var client = HttpClientFactoryBuilder.Create()
+                                                 .WithMessageExceptionHandler(ex => true, ex => null as Exception, requestExceptionEventHandler, transformedRequestExceptionEventHandler)
+                                                 .WithMessageHandler(new OfflineMessageHandler())
+                                                 .Build()
+                                                 .CreateClient();
 
             var exception = await Assert.ThrowsAsync<Exception>(() => client.GetAsync($"{_server.Urls[0]}{_endpointUri}"));
 
@@ -143,15 +147,16 @@
         [Fact]
         public async Task Exception_translator_should_not_change_unhandled_exceptions()
         {
-            var clientWithRetry = HttpClientFactory.Create()
-                                        .WithMessageExceptionHandler(ex => true, ex => ex)
-                                        .WithPolicy(
-                                                    Policy<HttpResponseMessage>
-                                                        .Handle<HttpRequestException>()
-                                                        .OrResult(result => result.StatusCode >= HttpStatusCode.InternalServerError || result.StatusCode == HttpStatusCode.RequestTimeout)
-                                                        .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(1)))
-                                        .WithPolicy(Policy.TimeoutAsync<HttpResponseMessage>(TimeSpan.FromSeconds(4), TimeoutStrategy.Optimistic))
-                                        .Build();
+            var clientWithRetry = HttpClientFactoryBuilder.Create()
+                                                          .WithMessageExceptionHandler(ex => true, ex => ex)
+                                                          .WithPolicy(
+                                                                      Policy<HttpResponseMessage>
+                                                                          .Handle<HttpRequestException>()
+                                                                          .OrResult(result => result.StatusCode >= HttpStatusCode.InternalServerError || result.StatusCode == HttpStatusCode.RequestTimeout)
+                                                                          .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(1)))
+                                                          .WithPolicy(Policy.TimeoutAsync<HttpResponseMessage>(TimeSpan.FromSeconds(4), TimeoutStrategy.Optimistic))
+                                                          .Build()
+                                                          .CreateClient();
 
             await Assert.ThrowsAsync<HttpRequestException>(() => clientWithRetry.GetAsync($"{_server.Urls[0]}{_endpointUriTimeout}"));
             Assert.Equal(4, _server.LogEntries.Count());
@@ -161,15 +166,16 @@
         [Fact]
         public async Task Exception_translator_should_throw_original_exception_if_delegate_is_false()
         {
-            var clientWithRetry = HttpClientFactory.Create()
-                                        .WithMessageExceptionHandler(ex => false, ex => ex)
-                                        .WithPolicy(
-                                                    Policy<HttpResponseMessage>
-                                                        .Handle<HttpRequestException>()
-                                                        .OrResult(result => result.StatusCode >= HttpStatusCode.InternalServerError || result.StatusCode == HttpStatusCode.RequestTimeout)
-                                                        .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(1)))
-                                        .WithPolicy(Policy.TimeoutAsync<HttpResponseMessage>(TimeSpan.FromSeconds(4), TimeoutStrategy.Optimistic))
-                                        .Build();
+            var clientWithRetry = HttpClientFactoryBuilder.Create()
+                                                          .WithMessageExceptionHandler(ex => false, ex => ex)
+                                                          .WithPolicy(
+                                                                      Policy<HttpResponseMessage>
+                                                                          .Handle<HttpRequestException>()
+                                                                          .OrResult(result => result.StatusCode >= HttpStatusCode.InternalServerError || result.StatusCode == HttpStatusCode.RequestTimeout)
+                                                                          .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(1)))
+                                                          .WithPolicy(Policy.TimeoutAsync<HttpResponseMessage>(TimeSpan.FromSeconds(4), TimeoutStrategy.Optimistic))
+                                                          .Build()
+                                                          .CreateClient();
 
             await Assert.ThrowsAsync<HttpRequestException>(() => clientWithRetry.GetAsync($"{_server.Urls[0]}{_endpointUriTimeout}"));
             Assert.Equal(4, _server.LogEntries.Count());
@@ -190,11 +196,12 @@
             eventMessageHandler.Request  += requestEventHandler;
             eventMessageHandler.Response += responseEventHandler;
 
-            var client = HttpClientFactory.Create()
-                               .WithMessageExceptionHandler(ex => true, ex => ex, requestExceptionEventHandler, transformedRequestExceptionEventHandler)
-                               .WithMessageHandler(eventMessageHandler)
-                               .WithMessageHandler(trafficRecorderMessageHandler)
-                               .Build();
+            var client = HttpClientFactoryBuilder.Create()
+                                                 .WithMessageExceptionHandler(ex => true, ex => ex, requestExceptionEventHandler, transformedRequestExceptionEventHandler)
+                                                 .WithMessageHandler(eventMessageHandler)
+                                                 .WithMessageHandler(trafficRecorderMessageHandler)
+                                                 .Build()
+                                                 .CreateClient();
 
 
             await client.GetAsync($"{_server.Urls[0]}{_endpointUri}");

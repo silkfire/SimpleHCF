@@ -31,42 +31,41 @@
                           .WithBody("Hello world!"));
         }
 
-        private static HttpClient CreateClient() =>
-            HttpClientFactory
-                .Create()
-                .WithCertificate(DefaultDevCert.Get())
-                .WithPolicy(
-    					Policy<HttpResponseMessage>
-                            .Handle<HttpRequestException>()
-                            .OrResult(result => result.StatusCode >= HttpStatusCode.InternalServerError || result.StatusCode == HttpStatusCode.RequestTimeout)
-                       .RetryAsync(3))
-                .Build();
+        private static HttpClient CreateClient() => HttpClientFactoryBuilder.Create()
+                                                                            .WithCertificate(DefaultDevCert.Get())
+                                                                            .WithPolicy(
+    			                                                            		Policy<HttpResponseMessage>
+                                                                                        .Handle<HttpRequestException>()
+                                                                                        .OrResult(result => result.StatusCode >= HttpStatusCode.InternalServerError || result.StatusCode == HttpStatusCode.RequestTimeout)
+                                                                                   .RetryAsync(3))
+                                                                            .Build()
+                                                                            .CreateClient();
 
         [Fact]
         public void Providing_null_certificate_params_should_throw_argumentnullexception()
         {
-            var exception = Assert.Throws<ArgumentNullException>(() => HttpClientFactory.Create().WithCertificate(null));
+            var exception = Assert.Throws<ArgumentNullException>(() => HttpClientFactoryBuilder.Create().WithCertificate(null));
             Assert.Equal("certificates", exception.ParamName);
         }
 
         [Fact]
         public void Providing_a_null_certificate_should_throw_argumentnullexception()
         {
-            var exception = Assert.Throws<ArgumentNullException>(() => HttpClientFactory.Create().WithCertificate(A.Fake<X509Certificate2>(), null));
+            var exception = Assert.Throws<ArgumentNullException>(() => HttpClientFactoryBuilder.Create().WithCertificate(A.Fake<X509Certificate2>(), null));
             Assert.Equal("certificate", exception.ParamName);
         }
 
         [Fact]
         public void Providing_no_arguments_to_certificate_should_throw_argumentexception()
         {
-            var exception = Assert.Throws<ArgumentException>(() => HttpClientFactory.Create().WithCertificate());
+            var exception = Assert.Throws<ArgumentException>(() => HttpClientFactoryBuilder.Create().WithCertificate());
             Assert.Equal("certificates", exception.ParamName);
         }
 
         [Fact]
         public void Providing_a_null_certificate_collection_should_throw_argumentnullexception()
         {
-            var exception = Assert.Throws<ArgumentNullException>(() => HttpClientFactory.Create().WithCertificates(null));
+            var exception = Assert.Throws<ArgumentNullException>(() => HttpClientFactoryBuilder.Create().WithCertificates(null));
             Assert.Equal("certificates", exception.ParamName);
         }
 

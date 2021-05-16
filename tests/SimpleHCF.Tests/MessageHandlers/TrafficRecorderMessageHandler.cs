@@ -13,18 +13,18 @@
         /// <summary>
         /// Gets the Traffic.
         /// </summary>
-        public List<(HttpRequestMessage, HttpResponseMessage)> Traffic { get; } = new List<(HttpRequestMessage, HttpResponseMessage)>();
+        public List<(HttpRequestMessage, HttpResponseMessage)> Traffic { get; } = new();
 
         /// <summary>
         /// Defines the _visitedMiddleware.
         /// </summary>
-        private readonly List<string> _visitedMiddleware;
+        private readonly IList<string> _visitedMiddleware;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TrafficRecorderMessageHandler"/> class.
         /// </summary>
-        /// <param name="visitedMiddleware">The visitedMiddleware<see cref="List{string}"/>.</param>
-        public TrafficRecorderMessageHandler(List<string> visitedMiddleware) => _visitedMiddleware = visitedMiddleware;
+        /// <param name="visitedMiddleware">A list containing the names of visited middleware. This list will continue to expand on every middleware visit.</param>
+        public TrafficRecorderMessageHandler(IList<string> visitedMiddleware) => _visitedMiddleware = visitedMiddleware;
 
         /// <summary>
         /// The SendAsync.

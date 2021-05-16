@@ -12,22 +12,26 @@
     using System.Runtime.CompilerServices;
     using System.Security.Cryptography.X509Certificates;
 
-    internal class HttpClientBuilder : IHttpClientBuilder
+    public partial class HttpClientFactoryBuilder : IHttpClientFactoryInstantiator
     {        
         private Uri _baseUrl;
-        private readonly Dictionary<string, string> _defaultHeaders = new Dictionary<string, string>();
-        private readonly List<X509Certificate2> _certificates = new List<X509Certificate2>();
-        private readonly List<IAsyncPolicy<HttpResponseMessage>> _policies = new List<IAsyncPolicy<HttpResponseMessage>>();
+        private readonly Dictionary<string, string> _defaultHeaders = new();
+        private readonly List<X509Certificate2> _certificates = new();
+        private readonly List<IAsyncPolicy<HttpResponseMessage>> _policies = new();
         private TimeSpan? _timeout;
-        private readonly List<DelegatingHandler> _middlewareHandlers = new List<DelegatingHandler>();
+        private readonly List<DelegatingHandler> _middlewareHandlers = new();
+        private SocketsHttpHandler _customPrimaryMessageHandler;
         private Action<SocketsHttpHandler> _primaryMessageHandlerConfigurator;
 
-        public IHttpClientBuilder WithBaseUrl(string baseUrl)
+
+        internal HttpClientFactoryBuilder() { }
+
+        public IHttpClientFactoryBuilder WithBaseUrl(string baseUrl)
         {
             return WithBaseUrl(new Uri(baseUrl));
         }
 
-        public IHttpClientBuilder WithBaseUrl(Uri baseUrl)
+        public IHttpClientFactoryBuilder WithBaseUrl(Uri baseUrl)
         {
             _baseUrl = baseUrl ?? throw new ArgumentNullException(nameof(baseUrl));
 
@@ -35,7 +39,7 @@
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public IHttpClientBuilder WithDefaultHeader(string name, string value)
+        public IHttpClientFactoryBuilder WithDefaultHeader(string name, string value)
         {
             if (name == null) throw new ArgumentNullException(nameof(name));
             if (value == null) throw new ArgumentNullException(nameof(value));
@@ -46,7 +50,7 @@
             return this;
         }
 
-        public IHttpClientBuilder WithDefaultHeaders(IDictionary<string, string> headers)
+        public IHttpClientFactoryBuilder WithDefaultHeaders(IDictionary<string, string> headers)
         {
             if (headers == null) throw new ArgumentNullException(nameof(headers));
 
@@ -63,12 +67,12 @@
             _certificates.Add(certificate);
         }
 
-        public IHttpClientBuilder WithCertificate(params X509Certificate2[] certificate)
+        public IHttpClientFactoryBuilder WithCertificate(params X509Certificate2[] certificate)
         {
             return WithCertificates(certificate);
         }
 
-        public IHttpClientBuilder WithCertificates(IEnumerable<X509Certificate2> certificates)
+        public IHttpClientFactoryBuilder WithCertificates(IEnumerable<X509Certificate2> certificates)
         {
             if (certificates == null) throw new ArgumentNullException(nameof(certificates));
 
@@ -89,12 +93,12 @@
             _policies.Add(policy);
         }
 
-        public IHttpClientBuilder WithPolicy(params IAsyncPolicy<HttpResponseMessage>[] policy)
+        public IHttpClientFactoryBuilder WithPolicy(params IAsyncPolicy<HttpResponseMessage>[] policy)
         {
             return WithPolicies(policy);
         }
 
-        public IHttpClientBuilder WithPolicies(IEnumerable<IAsyncPolicy<HttpResponseMessage>> policies)
+        public IHttpClientFactoryBuilder WithPolicies(IEnumerable<IAsyncPolicy<HttpResponseMessage>> policies)
         {
             if (policies == null) throw new ArgumentNullException(nameof(policies));
 
@@ -108,14 +112,14 @@
             return this;
         }
 
-        public IHttpClientBuilder WithTimeout(in TimeSpan timeout)
+        public IHttpClientFactoryBuilder WithRequestTimeout(in TimeSpan timeout)
         {
             _timeout = timeout;
 
             return this;
         }
 
-        private IHttpClientBuilder WithMessageHandler(DelegatingHandler handler)
+        private IHttpClientFactoryBuilder WithMessageHandler(DelegatingHandler handler)
         {
             if (handler == null) throw new ArgumentNullException(nameof(handler));
 
@@ -126,12 +130,12 @@
             return this;
         }
 
-        public IHttpClientBuilder WithMessageHandler(params DelegatingHandler[] handler)
+        public IHttpClientFactoryBuilder WithMessageHandler(params DelegatingHandler[] handler)
         {
             return WithMessageHandlers(handler);
         }
 
-        public IHttpClientBuilder WithMessageHandlers(IEnumerable<DelegatingHandler> handlers)
+        public IHttpClientFactoryBuilder WithMessageHandlers(IEnumerable<DelegatingHandler> handlers)
         {
             if (handlers == null) throw new ArgumentNullException(nameof(handlers));
 
@@ -145,40 +149,36 @@
             return this;
         }
 
-        public IHttpClientBuilder WithMessageExceptionHandler(Func<HttpRequestException, bool> exceptionHandlingPredicate,
+        public IHttpClientFactoryBuilder WithMessageExceptionHandler(Func<HttpRequestException, bool> exceptionHandlingPredicate,
                                                               Func<HttpRequestException, Exception> exceptionHandler,
                                                               EventHandler<HttpRequestException> requestExceptionEventHandler = null,
                                                               EventHandler<Exception> transformedRequestExceptionEventHandler = null) => WithMessageHandler(new ExceptionTranslatorRequestMiddleware(exceptionHandlingPredicate, exceptionHandler, requestExceptionEventHandler, transformedRequestExceptionEventHandler));
 
-        public IHttpClientBuilder WithPrimaryMessageHandlerConfigurator(Action<SocketsHttpHandler> configurator)
+        public IHttpClientFactoryBuilder WithPrimaryMessageHandler(SocketsHttpHandler defaultPrimaryMessageHandler)
+        {
+            _customPrimaryMessageHandler = defaultPrimaryMessageHandler ?? throw new ArgumentNullException(nameof(defaultPrimaryMessageHandler));
+
+            return this;
+        }
+
+        public IHttpClientFactoryBuilder WithPrimaryMessageHandlerConfigurator(Action<SocketsHttpHandler> configurator)
         {
             _primaryMessageHandlerConfigurator = configurator ?? throw new ArgumentNullException(nameof(configurator));
 
             return this;
         }
 
-        public HttpClient Build(SocketsHttpHandler defaultPrimaryMessageHandler)
+        public IHttpClientFactory Build()
         {
-            if (defaultPrimaryMessageHandler == null) throw new ArgumentNullException(nameof(defaultPrimaryMessageHandler));
-
-            InitializePrimaryMessageHandler(defaultPrimaryMessageHandler, out var rootPolicyHandler);
-
-            return ConstructClientWithMiddleware(defaultPrimaryMessageHandler, rootPolicyHandler);
+            return new SimpleHttpClientFactory(this);
         }
 
-        //ServicePointManager in .Net Core is a no-op so we need to do this
-        //see https://github.com/dotnet/extensions/issues/1345#issuecomment-607490721
-        public HttpClient Build(Action<SocketsHttpHandler> primaryMessageHandlerConfigurator = null)
+        public HttpClient CreateClient()
         {
-            var primaryMessageHandler = new SocketsHttpHandler();
+            var primaryMessageHandler = _customPrimaryMessageHandler ?? new SocketsHttpHandler();
             InitializePrimaryMessageHandler(primaryMessageHandler, out var rootPolicyHandler);
 
-            primaryMessageHandlerConfigurator?.Invoke(primaryMessageHandler);
-            
             var client = ConstructClientWithMiddleware(primaryMessageHandler, rootPolicyHandler);
-
-            if (_timeout.HasValue)
-                client.Timeout = _timeout.Value;
 
             return client;
         }
@@ -188,27 +188,26 @@
             rootPolicyHandler = null;
 
             primaryMessageHandler.MaxConnectionsPerServer = Constants.MaxConnectionsPerServer;
-            primaryMessageHandler.PooledConnectionIdleTimeout = Constants.ConnectionLifeTime;
-            primaryMessageHandler.PooledConnectionLifetime = Constants.ConnectionLifeTime;
+            primaryMessageHandler.PooledConnectionIdleTimeout = Constants.ConnectionLifetime;
+            primaryMessageHandler.PooledConnectionLifetime = Constants.ConnectionLifetime;
 
             if (_certificates.Count > 0)
             {
-                primaryMessageHandler.SslOptions = new SslClientAuthenticationOptions()
+                primaryMessageHandler.SslOptions = new SslClientAuthenticationOptions
                 {
-                    ClientCertificates = new X509CertificateCollection()
+                    ClientCertificates = new X509CertificateCollection(_certificates.Cast<X509Certificate>().ToArray())
                 };
-
-                primaryMessageHandler.SslOptions.ClientCertificates.AddRange(_certificates.Cast<X509Certificate>().ToArray());
             }
 
             foreach (var policy in _policies)
             {
                 if (rootPolicyHandler == null)
+                {
                     rootPolicyHandler = new PollyMessageMiddleware(policy, primaryMessageHandler);
+                }
                 else
                 {
-                    var @new = new PollyMessageMiddleware(policy, rootPolicyHandler);
-                    rootPolicyHandler = @new;
+                    rootPolicyHandler = new PollyMessageMiddleware(policy, rootPolicyHandler);
                 }
             }
 
@@ -229,13 +228,9 @@
 
             void InitializeDefaultHeadersIfNeeded()
             {
-                if (_defaultHeaders.Count > 0)
+                foreach (var (key, value) in _defaultHeaders)
                 {
-                    foreach (var header in _defaultHeaders)
-                    {
-                        if (!client.DefaultRequestHeaders.Contains(header.Key))
-                            client.DefaultRequestHeaders.Add(header.Key, header.Value);
-                    }
+                    if (!client.DefaultRequestHeaders.Contains(key)) client.DefaultRequestHeaders.Add(key, value);
                 }
             }
         }
@@ -249,7 +244,7 @@
             else if (_middlewareHandlers.Count > 0)
                 createdClient = InitializeClientOnlyWithMiddleware();
             else
-                createdClient = new HttpClient(primaryMessageHandler, true);
+                createdClient = new HttpClient(primaryMessageHandler, false);
 
             if (_baseUrl != null)
                 createdClient.BaseAddress = _baseUrl;
@@ -264,10 +259,10 @@
                 if (_middlewareHandlers.Count > 0)
                 {
                     lastMiddleware.InnerHandler = rootPolicyHandler;
-                    client = new HttpClient(_middlewareHandlers.FirstOrDefault(), true);
+                    client = new HttpClient(_middlewareHandlers.FirstOrDefault(), false);
                 }
                 else
-                    client = new HttpClient(rootPolicyHandler, true);
+                    client = new HttpClient(rootPolicyHandler, false);
 
                 return client;
             }
@@ -275,7 +270,7 @@
             HttpClient InitializeClientOnlyWithMiddleware()
             {
                 lastMiddleware.InnerHandler = primaryMessageHandler;
-                var client = new HttpClient(_middlewareHandlers.FirstOrDefault(), true);
+                var client = new HttpClient(_middlewareHandlers.FirstOrDefault(), false);
 
                 return client;
             }

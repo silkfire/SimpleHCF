@@ -57,28 +57,28 @@
         [Fact]
         public void Providing_null_policy_params_should_throw_argumentnullexception()
         {
-            var exception = Assert.Throws<ArgumentNullException>(() => HttpClientFactory.Create().WithPolicy(null));
+            var exception = Assert.Throws<ArgumentNullException>(() => HttpClientFactoryBuilder.Create().WithPolicy(null));
             Assert.Equal("policies", exception.ParamName);
         }
 
         [Fact]
         public void Providing_a_null_policy_should_throw_argumentnullexception()
         {
-            var exception = Assert.Throws<ArgumentNullException>(() => HttpClientFactory.Create().WithPolicy(A.Fake<IAsyncPolicy<HttpResponseMessage>>(), null));
+            var exception = Assert.Throws<ArgumentNullException>(() => HttpClientFactoryBuilder.Create().WithPolicy(A.Fake<IAsyncPolicy<HttpResponseMessage>>(), null));
             Assert.Equal("policy", exception.ParamName);
         }
 
         [Fact]
         public void Providing_no_arguments_to_policy_should_throw_argumentexception()
         {
-            var exception = Assert.Throws<ArgumentException>(() => HttpClientFactory.Create().WithPolicy());
+            var exception = Assert.Throws<ArgumentException>(() => HttpClientFactoryBuilder.Create().WithPolicy());
             Assert.Equal("policies", exception.ParamName);
         }
 
 		[Fact]
         public void Providing_a_null_policy_collection_should_throw_argumentnullexception()
         {
-            var exception = Assert.Throws<ArgumentNullException>(() => HttpClientFactory.Create().WithPolicies(null));
+            var exception = Assert.Throws<ArgumentNullException>(() => HttpClientFactoryBuilder.Create().WithPolicies(null));
             Assert.Equal("policies", exception.ParamName);
         }
 
@@ -86,14 +86,15 @@
 		public async Task Client_with_retry_and_timeout_policy_should_properly_apply_policies()
 		{
 			//timeout after 2 seconds, then retry
-			var clientWithRetry = HttpClientFactory.Create()
-                                        .WithPolicy(
-                                                    Policy<HttpResponseMessage>
-                                                        .Handle<HttpRequestException>()
-                                                        .OrResult(result => result.StatusCode >= HttpStatusCode.InternalServerError || result.StatusCode == HttpStatusCode.RequestTimeout)
-                                                        .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(1)))
-                                        .WithPolicy(Policy.TimeoutAsync<HttpResponseMessage>(TimeSpan.FromSeconds(4), TimeoutStrategy.Optimistic))
-                                        .Build();
+			var clientWithRetry = HttpClientFactoryBuilder.Create()
+                                                          .WithPolicy(
+                                                                      Policy<HttpResponseMessage>
+                                                                          .Handle<HttpRequestException>()
+                                                                          .OrResult(result => result.StatusCode >= HttpStatusCode.InternalServerError || result.StatusCode == HttpStatusCode.RequestTimeout)
+                                                                          .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(1)))
+                                                          .WithPolicy(Policy.TimeoutAsync<HttpResponseMessage>(TimeSpan.FromSeconds(4), TimeoutStrategy.Optimistic))
+                                                          .Build()
+                                                          .CreateClient();
 
 			var responseWithTimeout = await clientWithRetry.GetAsync($"{_server.Urls[0]}{_endpointUriTimeout}");
 			Assert.Equal(4, _server.LogEntries.Count());
@@ -103,15 +104,16 @@
 		[Fact]
 		public async Task Client_with_retry_that_wraps_timeout_policy_should_properly_apply_policies()
 		{
-			var clientWithRetry = HttpClientFactory.Create()
-                                        .WithPolicy(
-                                                    Policy.WrapAsync(
-                                                                     Policy.TimeoutAsync<HttpResponseMessage>(25),
-                                                                     Policy<HttpResponseMessage>
-                                                                         .Handle<HttpRequestException>()
-                                                                         .OrResult(result => result.StatusCode >= HttpStatusCode.InternalServerError || result.StatusCode == HttpStatusCode.RequestTimeout)
-                                                                         .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(1))))
-                                        .Build();
+			var clientWithRetry = HttpClientFactoryBuilder.Create()
+                                                          .WithPolicy(
+                                                                      Policy.WrapAsync(
+                                                                                       Policy.TimeoutAsync<HttpResponseMessage>(25),
+                                                                                       Policy<HttpResponseMessage>
+                                                                                           .Handle<HttpRequestException>()
+                                                                                           .OrResult(result => result.StatusCode >= HttpStatusCode.InternalServerError || result.StatusCode == HttpStatusCode.RequestTimeout)
+                                                                                           .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(1))))
+                                                          .Build()
+                                                          .CreateClient();
 
 			var response = await clientWithRetry.GetAsync($"{_server.Urls[0]}{_endpointUriTimeout}");
 			Assert.Equal(4, _server.LogEntries.Count());
@@ -122,7 +124,7 @@
 		[Fact]
 		public async Task Client_without_retry_policy_should_fail_with_timeout()
 		{
-			var clientWithoutRetry = HttpClientFactory.Create().Build();
+			var clientWithoutRetry = HttpClientFactoryBuilder.Create().Build().CreateClient();
 
 			var responseWithTimeout = await clientWithoutRetry.GetAsync($"{_server.Urls[0]}{_endpointUri}");
 
@@ -134,13 +136,14 @@
         [Fact]
         public async Task Retry_policy_should_work()
         {
-			var clientWithRetry = HttpClientFactory.Create()
-                                        .WithPolicy(
-                                                    Policy<HttpResponseMessage>
-                                                        .Handle<HttpRequestException>()
-                                                        .OrResult(result => result.StatusCode >= HttpStatusCode.InternalServerError || result.StatusCode == HttpStatusCode.RequestTimeout)
-                                                        .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(1)))
-                                        .Build();
+			var clientWithRetry = HttpClientFactoryBuilder.Create()
+                                                          .WithPolicy(
+                                                                      Policy<HttpResponseMessage>
+                                                                          .Handle<HttpRequestException>()
+                                                                          .OrResult(result => result.StatusCode >= HttpStatusCode.InternalServerError || result.StatusCode == HttpStatusCode.RequestTimeout)
+                                                                          .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(1)))
+                                                          .Build()
+                                                          .CreateClient();
 
 			var response = await clientWithRetry.GetAsync($"{_server.Urls[0]}{_endpointUri}");
             

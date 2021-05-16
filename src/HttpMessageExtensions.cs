@@ -24,7 +24,7 @@
         /// <para>Do not re-use an instance of <see cref="Context"/> across more than one execution.</para>
         /// </summary>
         /// <param name="request">The HTTP request message to get the <see cref="Context"/> from.</param>
-        /// <param name="policyExecutionContext">If found, the Polly policy context that has been previously set on the provided HTTP request message.</param>
+        /// <param name="policyExecutionContext">If found, will reference the Polly policy context that has been previously set on the provided HTTP request message.</param>
         public static bool TryGetPolicyExecutionContext(this HttpRequestMessage request, out Context policyExecutionContext)
         {
             return request.Options.TryGetValue(PolicyExecutionContextKey, out policyExecutionContext);
