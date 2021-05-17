@@ -12,6 +12,7 @@ namespace SimpleHCF.Tests
     using System.Linq;
     using System.Net;
     using System.Net.Http;
+    using System.Reflection;
     using System.Threading.Tasks;
 
     public sealed class BasicClientBuilderTests : IDisposable
@@ -166,6 +167,19 @@ namespace SimpleHCF.Tests
             var client = HttpClientFactoryBuilder.Create().WithRequestTimeout(timeout).Build().CreateClient();
 
             Assert.Equal(timeout, client.Timeout);
+        }
+
+        [Fact]
+        public void Should_not_dispose_primary_message_handler_when_disposing_client()
+        {
+            var substitutePrimaryMessageHandler = new SocketsHttpHandler();
+
+            HttpClient client;
+            using (client = HttpClientFactoryBuilder.Create().WithPrimaryMessageHandler(substitutePrimaryMessageHandler).Build().CreateClient()) { }
+
+            var isMessageHandlerDisposed = (bool)typeof(SocketsHttpHandler).GetField("_disposed", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(substitutePrimaryMessageHandler);
+
+            Assert.False(isMessageHandlerDisposed);
         }
 
 

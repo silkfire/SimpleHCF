@@ -6,7 +6,7 @@
 
 A lightweight `HttpClient` factory that properly handles DNS changes and closely integrates Polly policies into the client.
 
-### 👁‍🗨 NOTE: This library requires your project to target **.NET 5** or higher.
+### ⚡ NOTE: This library requires your project to target **.NET 5** or higher.
 
 ---
 
