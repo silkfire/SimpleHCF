@@ -206,8 +206,8 @@
 
             await client.GetAsync($"{_server.Urls[0]}{_endpointUri}");
 
-                  A.CallTo(() =>  requestEventHandler.Invoke(A<EventMessageHandler>.That.IsSameAs(eventMessageHandler), A<EventMessageHandler.RequestEventArgs>.That.Matches(e => e.Request.Headers.Single(h => h.Key == "foobar").Value.FirstOrDefault() == "foobar"))).MustHaveHappenedOnceExactly()
-            .Then(A.CallTo(() => responseEventHandler.Invoke(A<EventMessageHandler>.That.IsSameAs(eventMessageHandler), A<EventMessageHandler.ResponseEventArgs>.That.Matches(e => e.Response.Headers.Single(h => h.Key == "foobar").Value.FirstOrDefault() == "foobar"))).MustHaveHappenedOnceExactly());
+                  A.CallTo(() =>  requestEventHandler.Invoke(eventMessageHandler, A<EventMessageHandler.RequestEventArgs> .That.Matches(e => e.Request .Headers.Single(h => h.Key == "foobar").Value.FirstOrDefault() == "foobar"))).MustHaveHappenedOnceExactly()
+            .Then(A.CallTo(() => responseEventHandler.Invoke(eventMessageHandler, A<EventMessageHandler.ResponseEventArgs>.That.Matches(e => e.Response.Headers.Single(h => h.Key == "foobar").Value.FirstOrDefault() == "foobar"))).MustHaveHappenedOnceExactly());
 
             A.CallTo(() => requestExceptionEventHandler.Invoke(A<ExceptionTranslatorRequestMiddleware>._, A<HttpRequestException>._)).MustNotHaveHappened();
             A.CallTo(() => transformedRequestExceptionEventHandler.Invoke(A<ExceptionTranslatorRequestMiddleware>._, A<Exception>._)).MustNotHaveHappened();
