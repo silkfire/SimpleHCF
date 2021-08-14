@@ -20,24 +20,25 @@
 
     public class ExceptionTranslatorTests
     {
-        private const string _endpointUri = "/hello/world";
-        private const string _endpointUriTimeout = "/timeout";
+        private const string EndpointUri = "/hello/world";
+        private const string EndpointUriTimeout = "/timeout";
+        private const string HttpContentValue = "Hello world!";
 
         private readonly WireMockServer _server;
 
         public ExceptionTranslatorTests()
         {
             _server = WireMockServer.Start();
-            _server.Given(Request.Create().WithPath(_endpointUri).UsingAnyMethod())
+            _server.Given(Request.Create().WithPath(EndpointUri).UsingAnyMethod())
                 .RespondWith(
                     Response.Create()
                         .WithStatusCode(HttpStatusCode.OK)
                         .WithHeader("Content-Type", "text/plain")
-                        .WithBody("Hello world!"));       
+                        .WithBody(HttpContentValue));       
             
             _server
                 .Given(Request.Create()
-                    .WithPath(_endpointUriTimeout)
+                    .WithPath(EndpointUriTimeout)
                     .UsingGet())
                 .RespondWith(Response.Create()
                     .WithStatusCode(HttpStatusCode.RequestTimeout));
@@ -72,7 +73,7 @@
                                                  .Build()
                                                  .CreateClient();
 
-            await Assert.ThrowsAsync<HttpRequestException>(() => client.GetAsync($"{_server.Urls[0]}{_endpointUriTimeout}"));
+            await Assert.ThrowsAsync<HttpRequestException>(() => client.GetAsync($"{_server.Urls[0]}{EndpointUriTimeout}"));
 
             A.CallTo(() => requestExceptionEventHandler.Invoke(A<ExceptionTranslatorRequestMiddleware>.That.IsNotNull(), A<HttpRequestException>.That.IsNotNull())).MustHaveHappenedOnceExactly();
         }
@@ -88,13 +89,13 @@
                                                           .WithPolicy(
                                                                       Policy<HttpResponseMessage>
                                                                           .Handle<HttpRequestException>()
-                                                                          .OrResult(result => result.StatusCode >= HttpStatusCode.InternalServerError || result.StatusCode == HttpStatusCode.RequestTimeout)
+                                                                          .OrResult(result => result.StatusCode is >= HttpStatusCode.InternalServerError or HttpStatusCode.RequestTimeout)
                                                                           .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(1)))
                                                           .WithPolicy(Policy.TimeoutAsync<HttpResponseMessage>(TimeSpan.FromSeconds(4), TimeoutStrategy.Optimistic))
                                                           .Build()
                                                           .CreateClient();
 
-            await Assert.ThrowsAsync<TestException>(() => clientWithRetry.GetAsync($"{_server.Urls[0]}{_endpointUriTimeout}"));
+            await Assert.ThrowsAsync<TestException>(() => clientWithRetry.GetAsync($"{_server.Urls[0]}{EndpointUriTimeout}"));
             Assert.Equal(4, _server.LogEntries.Count());
             A.CallTo(() => transformedRequestExceptionEventHandler.Invoke(A<ExceptionTranslatorRequestMiddleware>.That.IsNotNull(), A<Exception>.That.IsNotNull())).MustHaveHappenedOnceExactly();
         }
@@ -110,13 +111,13 @@
                                                           .WithPolicy(
                                                                       Policy<HttpResponseMessage>
                                                                           .Handle<HttpRequestException>()
-                                                                          .OrResult(result => result.StatusCode >= HttpStatusCode.InternalServerError || result.StatusCode == HttpStatusCode.RequestTimeout)
+                                                                          .OrResult(result => result.StatusCode is >= HttpStatusCode.InternalServerError or HttpStatusCode.RequestTimeout)
                                                                           .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(1)))
                                                           .WithPolicy(Policy.TimeoutAsync<HttpResponseMessage>(TimeSpan.FromSeconds(4), TimeoutStrategy.Optimistic))
                                                           .Build()
                                                           .CreateClient();
 
-            var exception = await Assert.ThrowsAsync<Exception>(() => clientWithRetry.GetAsync($"{_server.Urls[0]}{_endpointUriTimeout}"));
+            var exception = await Assert.ThrowsAsync<Exception>(() => clientWithRetry.GetAsync($"{_server.Urls[0]}{EndpointUriTimeout}"));
 
             Assert.IsType<HttpRequestException>(exception.InnerException);
             Assert.Equal(4, _server.LogEntries.Count());
@@ -136,7 +137,7 @@
                                                  .Build()
                                                  .CreateClient();
 
-            var exception = await Assert.ThrowsAsync<Exception>(() => client.GetAsync($"{_server.Urls[0]}{_endpointUri}"));
+            var exception = await Assert.ThrowsAsync<Exception>(() => client.GetAsync($"{_server.Urls[0]}{EndpointUri}"));
 
             Assert.IsType<HttpRequestException>(exception.InnerException);
             Assert.Empty(_server.LogEntries);
@@ -152,13 +153,13 @@
                                                           .WithPolicy(
                                                                       Policy<HttpResponseMessage>
                                                                           .Handle<HttpRequestException>()
-                                                                          .OrResult(result => result.StatusCode >= HttpStatusCode.InternalServerError || result.StatusCode == HttpStatusCode.RequestTimeout)
+                                                                          .OrResult(result => result.StatusCode is >= HttpStatusCode.InternalServerError or HttpStatusCode.RequestTimeout)
                                                                           .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(1)))
                                                           .WithPolicy(Policy.TimeoutAsync<HttpResponseMessage>(TimeSpan.FromSeconds(4), TimeoutStrategy.Optimistic))
                                                           .Build()
                                                           .CreateClient();
 
-            await Assert.ThrowsAsync<HttpRequestException>(() => clientWithRetry.GetAsync($"{_server.Urls[0]}{_endpointUriTimeout}"));
+            await Assert.ThrowsAsync<HttpRequestException>(() => clientWithRetry.GetAsync($"{_server.Urls[0]}{EndpointUriTimeout}"));
             Assert.Equal(4, _server.LogEntries.Count());
             
         }
@@ -171,13 +172,13 @@
                                                           .WithPolicy(
                                                                       Policy<HttpResponseMessage>
                                                                           .Handle<HttpRequestException>()
-                                                                          .OrResult(result => result.StatusCode >= HttpStatusCode.InternalServerError || result.StatusCode == HttpStatusCode.RequestTimeout)
+                                                                          .OrResult(result => result.StatusCode is >= HttpStatusCode.InternalServerError or HttpStatusCode.RequestTimeout)
                                                                           .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(1)))
                                                           .WithPolicy(Policy.TimeoutAsync<HttpResponseMessage>(TimeSpan.FromSeconds(4), TimeoutStrategy.Optimistic))
                                                           .Build()
                                                           .CreateClient();
 
-            await Assert.ThrowsAsync<HttpRequestException>(() => clientWithRetry.GetAsync($"{_server.Urls[0]}{_endpointUriTimeout}"));
+            await Assert.ThrowsAsync<HttpRequestException>(() => clientWithRetry.GetAsync($"{_server.Urls[0]}{EndpointUriTimeout}"));
             Assert.Equal(4, _server.LogEntries.Count());
         }
 
@@ -197,17 +198,17 @@
             eventMessageHandler.Response += responseEventHandler;
 
             var client = HttpClientFactoryBuilder.Create()
-                                                 .WithMessageExceptionHandler(ex => true, ex => ex, requestExceptionEventHandler, transformedRequestExceptionEventHandler)
+                                                 .WithMessageExceptionHandler(_ => true, ex => ex, requestExceptionEventHandler, transformedRequestExceptionEventHandler)
                                                  .WithMessageHandler(eventMessageHandler)
                                                  .WithMessageHandler(trafficRecorderMessageHandler)
                                                  .Build()
                                                  .CreateClient();
 
 
-            await client.GetAsync($"{_server.Urls[0]}{_endpointUri}");
+            await client.GetAsync($"{_server.Urls[0]}{EndpointUri}");
 
-                  A.CallTo(() =>  requestEventHandler.Invoke(eventMessageHandler, A<EventMessageHandler.RequestEventArgs> .That.Matches(e => e.Request .Headers.Single(h => h.Key == "foobar").Value.FirstOrDefault() == "foobar"))).MustHaveHappenedOnceExactly()
-            .Then(A.CallTo(() => responseEventHandler.Invoke(eventMessageHandler, A<EventMessageHandler.ResponseEventArgs>.That.Matches(e => e.Response.Headers.Single(h => h.Key == "foobar").Value.FirstOrDefault() == "foobar"))).MustHaveHappenedOnceExactly());
+                  A.CallTo(() =>  requestEventHandler.Invoke(eventMessageHandler, A<EventMessageHandler.RequestEventArgs> .That.Matches(e => e.Request .Headers.Single(h => h.Key == TrafficRecorderMessageHandler.HeaderName).Value.FirstOrDefault() == TrafficRecorderMessageHandler.HeaderValue))).MustHaveHappenedOnceExactly()
+            .Then(A.CallTo(() => responseEventHandler.Invoke(eventMessageHandler, A<EventMessageHandler.ResponseEventArgs>.That.Matches(e => e.Response.Headers.Single(h => h.Key == TrafficRecorderMessageHandler.HeaderName).Value.FirstOrDefault() == TrafficRecorderMessageHandler.HeaderValue))).MustHaveHappenedOnceExactly());
 
             A.CallTo(() => requestExceptionEventHandler.Invoke(A<ExceptionTranslatorRequestMiddleware>._, A<HttpRequestException>._)).MustNotHaveHappened();
             A.CallTo(() => transformedRequestExceptionEventHandler.Invoke(A<ExceptionTranslatorRequestMiddleware>._, A<Exception>._)).MustNotHaveHappened();

@@ -19,8 +19,9 @@
 
     public class MiddlewareAndPolicyTests
     {
-        private const string _endpointUri = "/hello/world";
-        private const string _endpointUriTimeout = "/timeout";
+        private const string EndpointUri = "/hello/world";
+        private const string EndpointUriTimeout = "/timeout";
+        private const string HttpContentValue = "Hello world!";
 
         private readonly WireMockServer _server;
 
@@ -30,7 +31,7 @@
 
             _server
                 .Given(Request.Create()
-                    .WithPath(_endpointUri)
+                    .WithPath(EndpointUri)
                     .UsingGet())
                 .InScenario("Timeout-then-resolved")
                 .WillSetStateTo("Transient issue resolved")
@@ -39,7 +40,7 @@
 
             _server
                 .Given(Request.Create()
-                    .WithPath(_endpointUri)
+                    .WithPath(EndpointUri)
                     .UsingGet())
                 .InScenario("Timeout-then-resolved")
                 .WhenStateIs("Transient issue resolved")
@@ -47,11 +48,11 @@
                 .RespondWith(Response.Create()
                     .WithStatusCode(HttpStatusCode.OK)
                     .WithHeader("Content-Type", "text/plain")
-                    .WithBody("Hello world!"));
+                    .WithBody(HttpContentValue));
 
             _server
                 .Given(Request.Create()
-                    .WithPath(_endpointUriTimeout)
+                    .WithPath(EndpointUriTimeout)
                     .UsingGet())
                 .RespondWith(Response.Create()
                     .WithStatusCode(HttpStatusCode.RequestTimeout));
@@ -60,14 +61,19 @@
         [Fact]
         public async Task Client_with_retry_and_timeout_policy_should_properly_apply_policies_with_single_middleware()
         {
-            var eventMessageHandler = new EventMessageHandler(A.Dummy<IList<string>>());
+            var actuallyVisitedMiddleware = new List<string>();
+
+            var requestEventHandler = A.Fake<EventHandler<EventMessageHandler.RequestEventArgs>>();
+
+            var eventMessageHandler = new EventMessageHandler(actuallyVisitedMiddleware);
+            eventMessageHandler.Request += requestEventHandler;
 
             //timeout after 2 seconds, then retry
             var clientWithRetry = HttpClientFactoryBuilder.Create()
                                                           .WithPolicy(
                                                                       Policy<HttpResponseMessage>
                                                                           .Handle<HttpRequestException>()
-                                                                          .OrResult(result => result.StatusCode >= HttpStatusCode.InternalServerError || result.StatusCode == HttpStatusCode.RequestTimeout)
+                                                                          .OrResult(result => result.StatusCode is >= HttpStatusCode.InternalServerError or HttpStatusCode.RequestTimeout)
                                                                           .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(1)))
                                                           .WithPolicy(
                                                                       Policy.TimeoutAsync<HttpResponseMessage>(TimeSpan.FromSeconds(4), TimeoutStrategy.Optimistic))
@@ -75,34 +81,33 @@
                                                           .Build()
                                                           .CreateClient();
 
-            Task<HttpResponseMessage> responseTask = null;
+            var response = await clientWithRetry.GetAsync($"{_server.Urls[0]}{EndpointUriTimeout}");
 
-            await Assert.RaisesAsync<EventMessageHandler.RequestEventArgs>(
-                h => eventMessageHandler.Request += h,
-                h => eventMessageHandler.Request -= h,
-                () => responseTask = clientWithRetry.GetAsync($"{_server.Urls[0]}{_endpointUriTimeout}"));
-
-            var responseWithTimeout = await responseTask;
+            A.CallTo(() => requestEventHandler.Invoke(eventMessageHandler, A<EventMessageHandler.RequestEventArgs>.That.IsNotNull())).MustHaveHappenedOnceExactly();
 
             Assert.Equal(4, _server.LogEntries.Count());
-            Assert.Equal(HttpStatusCode.RequestTimeout, responseWithTimeout.StatusCode);
+            Assert.Equal(new[] { nameof(EventMessageHandler) }, actuallyVisitedMiddleware);
+            Assert.Equal(HttpStatusCode.RequestTimeout, response.StatusCode);
         }
 
 
         [Fact]
         public async Task Client_with_retry_and_timeout_policy_should_properly_apply_policies_with_multiple_middlewares()
         {
-            var visitedMiddleware = new List<string>();
+            var actuallyVisitedMiddleware = new List<string>();
 
-            var trafficRecorderMessageHandler = new TrafficRecorderMessageHandler(visitedMiddleware);
-            var eventMessageHandler = new EventMessageHandler(visitedMiddleware);
+            var requestEventHandler = A.Fake<EventHandler<EventMessageHandler.RequestEventArgs>>();
 
-            //timeout after 2 seconds, then retry
+            var eventMessageHandler = new EventMessageHandler(actuallyVisitedMiddleware);
+            eventMessageHandler.Request += requestEventHandler;
+
+            var trafficRecorderMessageHandler = new TrafficRecorderMessageHandler(actuallyVisitedMiddleware);
+
             var clientWithRetry = HttpClientFactoryBuilder.Create()
                                                           .WithPolicy(
                                                                       Policy<HttpResponseMessage>
                                                                           .Handle<HttpRequestException>()
-                                                                          .OrResult(result => result.StatusCode >= HttpStatusCode.InternalServerError || result.StatusCode == HttpStatusCode.RequestTimeout)
+                                                                          .OrResult(result => result.StatusCode is >= HttpStatusCode.InternalServerError or HttpStatusCode.RequestTimeout)
                                                                           .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(1)))
                                                           .WithPolicy(
                                                                       Policy.TimeoutAsync<HttpResponseMessage>(TimeSpan.FromSeconds(4), TimeoutStrategy.Optimistic))
@@ -111,92 +116,84 @@
                                                           .Build()
                                                           .CreateClient();
 
-            Task<HttpResponseMessage> responseTask = null;
+            var response = await clientWithRetry.GetAsync($"{_server.Urls[0]}{EndpointUriTimeout}");
 
-            var raisedEvent = await Assert.RaisesAsync<EventMessageHandler.RequestEventArgs>(
-                h => eventMessageHandler.Request += h,
-                h => eventMessageHandler.Request -= h,
-                () => responseTask = clientWithRetry.GetAsync($"{_server.Urls[0]}{_endpointUriTimeout}"));
+            A.CallTo(() => requestEventHandler.Invoke(eventMessageHandler, A<EventMessageHandler.RequestEventArgs>.That.Matches(e => e.Request.Headers.Single(h => h.Key == TrafficRecorderMessageHandler.HeaderName).Value.FirstOrDefault() == TrafficRecorderMessageHandler.HeaderValue))).MustHaveHappenedOnceExactly();
 
-            var responseWithTimeout = await responseTask;
-
-            Assert.True(raisedEvent.Arguments.Request.Headers.Contains("foobar"));
-            Assert.Equal("foobar", raisedEvent.Arguments.Request.Headers.GetValues("foobar").FirstOrDefault());
             Assert.Single(trafficRecorderMessageHandler.Traffic);
             Assert.Equal(4, _server.LogEntries.Count());
-            Assert.Equal(HttpStatusCode.RequestTimeout, responseWithTimeout.StatusCode);
+            Assert.Equal(new[] { nameof(TrafficRecorderMessageHandler), nameof(EventMessageHandler) }, actuallyVisitedMiddleware);
+            Assert.Equal(HttpStatusCode.RequestTimeout, response.StatusCode);
         }
 
 
         [Fact]
         public async Task Retry_policy_should_work_with_multiple_middleware()
         {
-            var visitedMiddleware = new List<string>();
+            var actuallyVisitedMiddleware = new List<string>();
 
-            var trafficRecorderMessageHandler = new TrafficRecorderMessageHandler(visitedMiddleware);
-            var eventMessageHandler = new EventMessageHandler(visitedMiddleware);
+            var requestEventHandler = A.Fake<EventHandler<EventMessageHandler.RequestEventArgs>>();
+
+            var eventMessageHandler = new EventMessageHandler(actuallyVisitedMiddleware);
+            eventMessageHandler.Request += requestEventHandler;
+
+            var trafficRecorderMessageHandler = new TrafficRecorderMessageHandler(actuallyVisitedMiddleware);
 
             var clientWithRetry = HttpClientFactoryBuilder.Create()
                                                           .WithPolicy(
                                                                       Policy<HttpResponseMessage>
                                                                           .Handle<HttpRequestException>()
-                                                                          .OrResult(result => result.StatusCode >= HttpStatusCode.InternalServerError || result.StatusCode == HttpStatusCode.RequestTimeout)
+                                                                          .OrResult(result => result.StatusCode is >= HttpStatusCode.InternalServerError or HttpStatusCode.RequestTimeout)
                                                                           .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(1)))
                                                           .WithMessageHandler(eventMessageHandler)
                                                           .WithMessageHandler(trafficRecorderMessageHandler)
                                                           .Build()
                                                           .CreateClient();
 
-            Task<HttpResponseMessage> responseTask = null;
+            var response = await clientWithRetry.GetAsync($"{_server.Urls[0]}{EndpointUri}");
+            var eventManager = new string('c', 78);
+            A.CallTo(() => requestEventHandler.Invoke(eventMessageHandler, A<EventMessageHandler.RequestEventArgs>.That.Matches(e => e.Request.Headers.Single(h => h.Key == TrafficRecorderMessageHandler.HeaderName).Value.FirstOrDefault() == TrafficRecorderMessageHandler.HeaderValue))).MustHaveHappenedOnceExactly();
 
-            var raisedEvent = await Assert.RaisesAsync<EventMessageHandler.RequestEventArgs>(
-                h => eventMessageHandler.Request += h,
-                h => eventMessageHandler.Request -= h,
-                () => responseTask = clientWithRetry.GetAsync($"{_server.Urls[0]}{_endpointUri}"));
-
-            var response = await responseTask;
-
-            Assert.True(raisedEvent.Arguments.Request.Headers.Contains("foobar"));
-            Assert.Equal("foobar", raisedEvent.Arguments.Request.Headers.GetValues("foobar").FirstOrDefault());
             Assert.Single(trafficRecorderMessageHandler.Traffic);
 
             Assert.Equal(2, _server.LogEntries.Count());
             Assert.Single(_server.LogEntries, le => (HttpStatusCode)le.ResponseMessage.StatusCode == HttpStatusCode.OK);
             Assert.Single(_server.LogEntries, le => (HttpStatusCode)le.ResponseMessage.StatusCode == HttpStatusCode.RequestTimeout);
-
+            Assert.Equal(new[] { nameof(TrafficRecorderMessageHandler), nameof(EventMessageHandler) }, actuallyVisitedMiddleware);
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-            Assert.Equal("Hello world!", await response.Content.ReadAsStringAsync());
+            Assert.Equal(HttpContentValue, await response.Content.ReadAsStringAsync());
         }
 
         [Fact]
         public async Task Retry_policy_should_work_with_single_middleware()
         {
-            var eventMessageHandler = new EventMessageHandler(A.Dummy<IList<string>>());
+            var actuallyVisitedMiddleware = new List<string>();
+
+            var requestEventHandler = A.Fake<EventHandler<EventMessageHandler.RequestEventArgs>>();
+
+            var eventMessageHandler = new EventMessageHandler(actuallyVisitedMiddleware);
+            eventMessageHandler.Request += requestEventHandler;
+
             var clientWithRetry = HttpClientFactoryBuilder.Create()
                                                           .WithPolicy(
                                                                       Policy<HttpResponseMessage>
                                                                           .Handle<HttpRequestException>()
-                                                                          .OrResult(result => result.StatusCode >= HttpStatusCode.InternalServerError || result.StatusCode == HttpStatusCode.RequestTimeout)
+                                                                          .OrResult(result => result.StatusCode is >= HttpStatusCode.InternalServerError or HttpStatusCode.RequestTimeout)
                                                                           .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(1)))
                                                           .WithMessageHandler(eventMessageHandler)
                                                           .Build()
                                                           .CreateClient();
 
-            Task<HttpResponseMessage> responseTask = null;
+            var response = await clientWithRetry.GetAsync($"{_server.Urls[0]}{EndpointUri}");
 
-            await Assert.RaisesAsync<EventMessageHandler.RequestEventArgs>(
-                h => eventMessageHandler.Request += h,
-                h => eventMessageHandler.Request -= h,
-                () => responseTask = clientWithRetry.GetAsync($"{_server.Urls[0]}{_endpointUri}"));
-
-            var response = await responseTask;
+            A.CallTo(() => requestEventHandler.Invoke(eventMessageHandler, A<EventMessageHandler.RequestEventArgs>.That.IsNotNull())).MustHaveHappenedOnceExactly();
 
             Assert.Equal(2, _server.LogEntries.Count());
             Assert.Single(_server.LogEntries, le => (HttpStatusCode)le.ResponseMessage.StatusCode == HttpStatusCode.OK);
             Assert.Single(_server.LogEntries, le => (HttpStatusCode)le.ResponseMessage.StatusCode == HttpStatusCode.RequestTimeout);
-
+            Assert.Equal(new[] { nameof(EventMessageHandler) }, actuallyVisitedMiddleware);
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-            Assert.Equal("Hello world!", await response.Content.ReadAsStringAsync());
+            Assert.Equal(HttpContentValue, await response.Content.ReadAsStringAsync());
         }
     }
 }

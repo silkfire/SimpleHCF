@@ -18,19 +18,20 @@
 
     public class MiddlewareDelegateTests
     {
-        private const string _endpointUri = "/hello/world";
+        private const string EndpointUri = "/hello/world";
+        private const string HttpContentValue = "Hello world!";
 
         private readonly WireMockServer _server;
 
         public MiddlewareDelegateTests()
         {
             _server = WireMockServer.Start();
-            _server.Given(Request.Create().WithPath(_endpointUri).UsingAnyMethod())
+            _server.Given(Request.Create().WithPath(EndpointUri).UsingAnyMethod())
                    .RespondWith(
                        Response.Create()
                           .WithStatusCode(HttpStatusCode.OK)
                           .WithHeader("Content-Type", "text/plain")
-                          .WithBody("Hello world!"));
+                          .WithBody(HttpContentValue));
         }
 
         [Fact]
@@ -102,25 +103,25 @@
         [Fact]
         public async Task Single_middleware_handler_should_work()
         {
-            await SingleMiddlewareHandler($"{_server.Urls[0]}{_endpointUri}", tr => HttpClientFactoryBuilder.Create().WithMessageHandler(tr));
+            await SingleMiddlewareHandler($"{_server.Urls[0]}{EndpointUri}", trmh => HttpClientFactoryBuilder.Create().WithMessageHandler(trmh));
         }
 
         [Fact]
         public async Task Single_middleware_handler_should_work_from_create_with_string_base_url()
         {
-            await SingleMiddlewareHandler(_endpointUri, tr => HttpClientFactoryBuilder.Create(_server.Urls[0], tr));
+            await SingleMiddlewareHandler(EndpointUri, trmh => HttpClientFactoryBuilder.Create(_server.Urls[0], trmh));
         }
 
         [Fact]
         public async Task Single_middleware_handler_should_work_from_create_with_base_url()
         {
-            await SingleMiddlewareHandler(_endpointUri, tr => HttpClientFactoryBuilder.Create(new Uri(_server.Urls[0]), tr));
+            await SingleMiddlewareHandler(EndpointUri, trmh => HttpClientFactoryBuilder.Create(new Uri(_server.Urls[0]), trmh));
         }
 
         [Fact]
         public async Task Single_middleware_handler_should_work_from_create()
         {
-            await SingleMiddlewareHandler($"{_server.Urls[0]}{_endpointUri}", tr => HttpClientFactoryBuilder.Create(tr));
+            await SingleMiddlewareHandler($"{_server.Urls[0]}{EndpointUri}", trmh => HttpClientFactoryBuilder.Create(trmh));
         }
 
         private static async Task SingleMiddlewareHandler(string endpoint, Func<TrafficRecorderMessageHandler, IHttpClientFactoryBuilder> factory)
@@ -129,7 +130,7 @@
 
             var client = factory(trafficRecorderMessageHandler).Build().CreateClient();
 
-            var _ = await client.GetAsync(endpoint);
+            await client.GetAsync(endpoint);
 
             Assert.Single(trafficRecorderMessageHandler.Traffic);
             Assert.Equal(HttpStatusCode.OK, trafficRecorderMessageHandler.Traffic[0].Item2.StatusCode);
@@ -138,55 +139,55 @@
         [Fact]
         public async Task Multiple_middleware_handlers_should_work()
         {
-            await MultipleMiddlewareHandlers($"{_server.Urls[0]}{_endpointUri}", (tr, e) => HttpClientFactoryBuilder.Create().WithMessageHandler(e).WithMessageHandler(tr), new[] { nameof(TrafficRecorderMessageHandler), nameof(EventMessageHandler) });
+            await MultipleMiddlewareHandlers($"{_server.Urls[0]}{EndpointUri}", (emh, trmh) => HttpClientFactoryBuilder.Create().WithMessageHandler(trmh).WithMessageHandler(emh), new[] { nameof(EventMessageHandler), nameof(TrafficRecorderMessageHandler) });
         }
 
         [Fact]
         public async Task Multiple_middleware_handlers_should_work_from_create()
         {
-            await MultipleMiddlewareHandlers($"{_server.Urls[0]}{_endpointUri}", (tr, e) => HttpClientFactoryBuilder.Create(e, tr), new[] { nameof(TrafficRecorderMessageHandler), nameof(EventMessageHandler) });
+            await MultipleMiddlewareHandlers($"{_server.Urls[0]}{EndpointUri}", (emh, trmh) => HttpClientFactoryBuilder.Create(trmh, emh), new[] { nameof(EventMessageHandler), nameof(TrafficRecorderMessageHandler) });
         }
 
         [Fact]
         public async Task Multiple_middleware_handlers_should_work_from_create_with_string_base_url()
         {
-            await MultipleMiddlewareHandlers(_endpointUri, (tr, e) => HttpClientFactoryBuilder.Create(_server.Urls[0], tr, e), new[] { nameof(EventMessageHandler), nameof(TrafficRecorderMessageHandler) });
+            await MultipleMiddlewareHandlers(EndpointUri, (emh, trmh) => HttpClientFactoryBuilder.Create(_server.Urls[0], emh, trmh), new[] { nameof(TrafficRecorderMessageHandler), nameof(EventMessageHandler) });
         }
 
         [Fact]
         public async Task Multiple_middleware_handlers_should_work_from_create_with_base_url()
         {
-            await MultipleMiddlewareHandlers(_endpointUri, (tr, e) => HttpClientFactoryBuilder.Create(new Uri(_server.Urls[0]), tr, e), new[] { nameof(EventMessageHandler), nameof(TrafficRecorderMessageHandler) });
+            await MultipleMiddlewareHandlers(EndpointUri, (emh, trmh) => HttpClientFactoryBuilder.Create(new Uri(_server.Urls[0]), emh, trmh), new[] { nameof(TrafficRecorderMessageHandler), nameof(EventMessageHandler) });
         }
 
         [Fact]
         public async Task Multiple_middleware_handlers_with_reverse_order_should_work()
         {
-            await MultipleMiddlewareHandlers($"{_server.Urls[0]}{_endpointUri}", (tr, e) => HttpClientFactoryBuilder.Create().WithMessageHandler(tr).WithMessageHandler(e), new[] { nameof(EventMessageHandler), nameof(TrafficRecorderMessageHandler) });
+            await MultipleMiddlewareHandlers($"{_server.Urls[0]}{EndpointUri}", (emh, trmh) => HttpClientFactoryBuilder.Create().WithMessageHandler(emh).WithMessageHandler(trmh), new[] { nameof(TrafficRecorderMessageHandler), nameof(EventMessageHandler) });
         }
 
         [Fact]
         public async Task Multiple_middleware_handlers_with_reverse_order_should_work_from_create()
         {
-            await MultipleMiddlewareHandlers($"{_server.Urls[0]}{_endpointUri}", (tr, e) => HttpClientFactoryBuilder.Create(tr, e), new[] { nameof(EventMessageHandler), nameof(TrafficRecorderMessageHandler) });
+            await MultipleMiddlewareHandlers($"{_server.Urls[0]}{EndpointUri}", (emh, trmh) => HttpClientFactoryBuilder.Create(emh, trmh), new[] { nameof(TrafficRecorderMessageHandler), nameof(EventMessageHandler) });
         }
 
-        private static async Task MultipleMiddlewareHandlers(string endpoint, Func<TrafficRecorderMessageHandler, EventMessageHandler, IHttpClientFactoryBuilder> factory, IEnumerable<string> expectedVisitedMiddleware)
+        private static async Task MultipleMiddlewareHandlers(string endpoint, Func<EventMessageHandler, TrafficRecorderMessageHandler, IHttpClientFactoryBuilder> factory, IEnumerable<string> expectedVisitedMiddleware)
         {
             var actuallyVisitedMiddleware = new List<string>();
 
             var trafficRecorderMessageHandler = new TrafficRecorderMessageHandler(actuallyVisitedMiddleware);
+            var requestEventHandler = A.Fake<EventHandler<EventMessageHandler.RequestEventArgs>>();
+
             var eventMessageHandler = new EventMessageHandler(actuallyVisitedMiddleware);
+            eventMessageHandler.Request += requestEventHandler;
 
-            var client = factory(trafficRecorderMessageHandler, eventMessageHandler).Build().CreateClient();
+            var client = factory(eventMessageHandler, trafficRecorderMessageHandler).Build().CreateClient();
 
-            var raisedEvent = await Assert.RaisesAsync<EventMessageHandler.RequestEventArgs>(
-                h => eventMessageHandler.Request += h,
-                h => eventMessageHandler.Request -= h,
-                () => client.GetAsync(endpoint));
+            await client.GetAsync(endpoint);
 
-            Assert.True(raisedEvent.Arguments.Request.Headers.Contains("foobar"));
-            Assert.Equal("foobar", raisedEvent.Arguments.Request.Headers.GetValues("foobar").FirstOrDefault());
+            A.CallTo(() => requestEventHandler.Invoke(eventMessageHandler, A<EventMessageHandler.RequestEventArgs>.That.Matches(e => e.Request.Headers.Single(h => h.Key == TrafficRecorderMessageHandler.HeaderName).Value.FirstOrDefault() == TrafficRecorderMessageHandler.HeaderValue))).MustHaveHappenedOnceExactly();
+
             Assert.Single(trafficRecorderMessageHandler.Traffic);
 
             Assert.Equal(HttpStatusCode.OK, trafficRecorderMessageHandler.Traffic[0].Item2.StatusCode);

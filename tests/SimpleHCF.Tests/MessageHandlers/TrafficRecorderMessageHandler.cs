@@ -10,6 +10,9 @@
     /// </summary>
     internal class TrafficRecorderMessageHandler : DelegatingHandler
     {
+        public const string HeaderName  = "foobar";
+        public const string HeaderValue = "foobar";
+
         /// <summary>
         /// Gets the Traffic.
         /// </summary>
@@ -34,9 +37,9 @@
         /// <returns>The <see cref="Task{HttpResponseMessage}"/>.</returns>
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
-            request.Headers.Add("foobar", "foobar");
+            request.Headers.Add(HeaderName, HeaderValue);
             var response = await base.SendAsync(request, cancellationToken);
-            response.Headers.Add("foobar", "foobar");
+            response.Headers.Add(HeaderName, HeaderValue);
             _visitedMiddleware.Add(nameof(TrafficRecorderMessageHandler));
             Traffic.Add((request, response));
 

@@ -17,8 +17,8 @@ namespace SimpleHCF.Tests
 
     public sealed class BasicClientBuilderTests : IDisposable
     {
-        private const string _endpointUri = "/hello/world";
-        private const string _endpointUri2 = "/hello/world2";
+        private const string EndpointUri = "/hello/world";
+        private const string HttpContentValue = "Hello world!";
 
         private readonly WireMockServer _server;
 
@@ -26,19 +26,12 @@ namespace SimpleHCF.Tests
         {
             _server = WireMockServer.Start();
 
-            _server.Given(Request.Create().WithPath(_endpointUri).UsingAnyMethod())
+            _server.Given(Request.Create().WithPath(EndpointUri).UsingAnyMethod())
                    .RespondWith(
                        Response.Create()
                           .WithStatusCode(HttpStatusCode.OK)
                           .WithHeader("Content-Type", "text/plain")
-                          .WithBody("Hello world!"));
-
-            _server.Given(Request.Create().WithPath(_endpointUri2).UsingAnyMethod())
-                .RespondWith(
-                    Response.Create()
-                        .WithStatusCode(HttpStatusCode.OK)
-                        .WithHeader("Content-Type", "text/plain")
-                        .WithBody("Hello world 2!"));
+                          .WithBody(HttpContentValue));
         }
 
 
@@ -60,50 +53,50 @@ namespace SimpleHCF.Tests
         public async Task Can_do_http_get_with_plain_client()
         {
             var client = HttpClientFactoryBuilder.Create().Build().CreateClient();
-            var response = await client.GetAsync($"{_server.Urls[0]}{_endpointUri}");
+            var response = await client.GetAsync($"{_server.Urls[0]}{EndpointUri}");
 
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-            Assert.Equal("Hello world!", await response.Content.ReadAsStringAsync());
+            Assert.Equal(HttpContentValue, await response.Content.ReadAsStringAsync());
         }
 
         [Fact]
         public async Task Can_do_http_get_with_plain_client_with_string_base_url()
         {
             var client = HttpClientFactoryBuilder.Create(_server.Urls[0]).Build().CreateClient();
-            var response = await client.GetAsync(_endpointUri);
+            var response = await client.GetAsync(EndpointUri);
 
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-            Assert.Equal("Hello world!", await response.Content.ReadAsStringAsync());
+            Assert.Equal(HttpContentValue, await response.Content.ReadAsStringAsync());
         }
 
         [Fact]
         public async Task Can_do_http_get_with_plain_client_with_base_url()
         {
             var client = HttpClientFactoryBuilder.Create(new Uri(_server.Urls[0])).Build().CreateClient();
-            var response = await client.GetAsync(_endpointUri);
+            var response = await client.GetAsync(EndpointUri);
 
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-            Assert.Equal("Hello world!", await response.Content.ReadAsStringAsync());
+            Assert.Equal(HttpContentValue, await response.Content.ReadAsStringAsync());
         }
 
         [Fact]
         public async Task Can_do_http_get_with_plain_client_with_string_base_url_alternative_syntax()
         {
             var client = HttpClientFactoryBuilder.Create().WithBaseUrl(_server.Urls[0]).Build().CreateClient();
-            var response = await client.GetAsync(_endpointUri);
+            var response = await client.GetAsync(EndpointUri);
 
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-            Assert.Equal("Hello world!", await response.Content.ReadAsStringAsync());
+            Assert.Equal(HttpContentValue, await response.Content.ReadAsStringAsync());
         }
 
         [Fact]
         public async Task Can_do_http_get_with_plain_client_with_base_url_alternative_syntax()
         {
             var client = HttpClientFactoryBuilder.Create().WithBaseUrl(new Uri(_server.Urls[0])).Build().CreateClient();
-            var response = await client.GetAsync(_endpointUri);
+            var response = await client.GetAsync(EndpointUri);
 
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-            Assert.Equal("Hello world!", await response.Content.ReadAsStringAsync());
+            Assert.Equal(HttpContentValue, await response.Content.ReadAsStringAsync());
         }
 
         [Fact]
@@ -142,7 +135,7 @@ namespace SimpleHCF.Tests
                                .Build()
                                .CreateClient();
 
-            _ = await client.GetAsync($"{_server.Urls[0]}{_endpointUri}");
+            _ = await client.GetAsync($"{_server.Urls[0]}{EndpointUri}");
 
             var traffic = Assert.Single(trafficRecorder.Traffic); //sanity check
             Assert.True(traffic.Item1.Headers.TryGetValues(headerName, out var headerValues));
@@ -153,10 +146,10 @@ namespace SimpleHCF.Tests
         public async Task Can_do_http_post_with_plain_client()
         {
             var client = HttpClientFactoryBuilder.Create(_server.Urls[0]).Build().CreateClient();
-            var response = await client.PostAsync(_endpointUri, new StringContent("{}"));
+            var response = await client.PostAsync(EndpointUri, new StringContent("{}"));
 
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-            Assert.Equal("Hello world!", await response.Content.ReadAsStringAsync());
+            Assert.Equal(HttpContentValue, await response.Content.ReadAsStringAsync());
         }
 
         [Fact]

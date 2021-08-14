@@ -15,7 +15,8 @@
 
     public sealed class SecureClientBuilderTests : IDisposable
     {
-        private const string _endpointUri = "/hello/world";
+        private const string EndpointUri = "/hello/world";
+        private const string HttpContentValue = "Hello world!";
 
         private readonly WireMockServer _server;
 
@@ -23,12 +24,12 @@
         {
             _server = WireMockServer.Start(ssl: true);
 
-            _server.Given(Request.Create().WithPath(_endpointUri).UsingAnyMethod())
+            _server.Given(Request.Create().WithPath(EndpointUri).UsingAnyMethod())
                    .RespondWith(
                        Response.Create()
                           .WithStatusCode(HttpStatusCode.OK)
                           .WithHeader("Content-Type", "text/plain")
-                          .WithBody("Hello world!"));
+                          .WithBody(HttpContentValue));
         }
 
         private static HttpClient CreateClient() => HttpClientFactoryBuilder.Create()
@@ -36,7 +37,7 @@
                                                                             .WithPolicy(
     			                                                            		Policy<HttpResponseMessage>
                                                                                         .Handle<HttpRequestException>()
-                                                                                        .OrResult(result => result.StatusCode >= HttpStatusCode.InternalServerError || result.StatusCode == HttpStatusCode.RequestTimeout)
+                                                                                        .OrResult(result => result.StatusCode is >= HttpStatusCode.InternalServerError or HttpStatusCode.RequestTimeout)
                                                                                    .RetryAsync(3))
                                                                             .Build()
                                                                             .CreateClient();
@@ -73,20 +74,20 @@
         public async Task Can_do_https_get_with_plain_client()
         {
             var client = CreateClient();
-            var response = await client.GetAsync($"{_server.Urls[0]}{_endpointUri}");
+            var response = await client.GetAsync($"{_server.Urls[0]}{EndpointUri}");
             
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-            Assert.Equal("Hello world!", await response.Content.ReadAsStringAsync());
+            Assert.Equal(HttpContentValue, await response.Content.ReadAsStringAsync());
         }
 
         [Fact(Skip = "Requires local certificate setup")]
         public async Task Can_do_https_post_with_plain_client()
         {
             var client = CreateClient();
-            var response = await client.PostAsync($"{_server.Urls[0]}{_endpointUri}", new StringContent("{}"));
+            var response = await client.PostAsync($"{_server.Urls[0]}{EndpointUri}", new StringContent("{}"));
 
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-            Assert.Equal("Hello world!", await response.Content.ReadAsStringAsync());
+            Assert.Equal(HttpContentValue, await response.Content.ReadAsStringAsync());
         }
 
 

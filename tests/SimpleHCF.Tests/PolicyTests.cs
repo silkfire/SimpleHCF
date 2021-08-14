@@ -16,10 +16,11 @@
 
     public class PolicyTests
     {
-        private const string _endpointUri = "/hello/world";
-        private const string _endpointUriTimeout = "/timeout";
+        private const string EndpointUri = "/hello/world";
+        private const string EndpointUriTimeout = "/timeout";
+        private const string HttpContentValue = "Hello world!";
 
-		private readonly WireMockServer _server;
+        private readonly WireMockServer _server;
 
 		public PolicyTests()
         {
@@ -27,7 +28,7 @@
 
 			_server
 				.Given(Request.Create()
-					.WithPath(_endpointUri)
+					.WithPath(EndpointUri)
 					.UsingGet())
 				.InScenario("Timeout-then-resolved")
 				.WillSetStateTo("Transient issue resolved")
@@ -36,7 +37,7 @@
 
 			_server
 				.Given(Request.Create()
-					.WithPath(_endpointUri)
+					.WithPath(EndpointUri)
 					.UsingGet())
 				.InScenario("Timeout-then-resolved")
 				.WhenStateIs("Transient issue resolved")
@@ -44,11 +45,11 @@
 				.RespondWith(Response.Create()
 					.WithStatusCode(HttpStatusCode.OK)
 					.WithHeader("Content-Type", "text/plain")
-                    .WithBody("Hello world!"));
+                    .WithBody(HttpContentValue));
 
 			_server
 				.Given(Request.Create()
-					.WithPath(_endpointUriTimeout)
+					.WithPath(EndpointUriTimeout)
 					.UsingGet())
 				.RespondWith(Response.Create()
 					.WithStatusCode(HttpStatusCode.RequestTimeout));
@@ -90,13 +91,13 @@
                                                           .WithPolicy(
                                                                       Policy<HttpResponseMessage>
                                                                           .Handle<HttpRequestException>()
-                                                                          .OrResult(result => result.StatusCode >= HttpStatusCode.InternalServerError || result.StatusCode == HttpStatusCode.RequestTimeout)
+                                                                          .OrResult(result => result.StatusCode is >= HttpStatusCode.InternalServerError or HttpStatusCode.RequestTimeout)
                                                                           .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(1)))
                                                           .WithPolicy(Policy.TimeoutAsync<HttpResponseMessage>(TimeSpan.FromSeconds(4), TimeoutStrategy.Optimistic))
                                                           .Build()
                                                           .CreateClient();
 
-			var responseWithTimeout = await clientWithRetry.GetAsync($"{_server.Urls[0]}{_endpointUriTimeout}");
+			var responseWithTimeout = await clientWithRetry.GetAsync($"{_server.Urls[0]}{EndpointUriTimeout}");
 			Assert.Equal(4, _server.LogEntries.Count());
             Assert.Equal(HttpStatusCode.RequestTimeout, responseWithTimeout.StatusCode);
 		}
@@ -110,12 +111,12 @@
                                                                                        Policy.TimeoutAsync<HttpResponseMessage>(25),
                                                                                        Policy<HttpResponseMessage>
                                                                                            .Handle<HttpRequestException>()
-                                                                                           .OrResult(result => result.StatusCode >= HttpStatusCode.InternalServerError || result.StatusCode == HttpStatusCode.RequestTimeout)
+                                                                                           .OrResult(result => result.StatusCode is >= HttpStatusCode.InternalServerError or HttpStatusCode.RequestTimeout)
                                                                                            .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(1))))
                                                           .Build()
                                                           .CreateClient();
 
-			var response = await clientWithRetry.GetAsync($"{_server.Urls[0]}{_endpointUriTimeout}");
+			var response = await clientWithRetry.GetAsync($"{_server.Urls[0]}{EndpointUriTimeout}");
 			Assert.Equal(4, _server.LogEntries.Count());
             Assert.Equal(HttpStatusCode.RequestTimeout, response.StatusCode);
 		}
@@ -126,7 +127,7 @@
 		{
 			var clientWithoutRetry = HttpClientFactoryBuilder.Create().Build().CreateClient();
 
-			var responseWithTimeout = await clientWithoutRetry.GetAsync($"{_server.Urls[0]}{_endpointUri}");
+			var responseWithTimeout = await clientWithoutRetry.GetAsync($"{_server.Urls[0]}{EndpointUri}");
 
 			var logEntry = Assert.Single(_server.LogEntries);
 			Assert.Equal(HttpStatusCode.RequestTimeout,  (HttpStatusCode)logEntry.ResponseMessage.StatusCode);
@@ -140,19 +141,19 @@
                                                           .WithPolicy(
                                                                       Policy<HttpResponseMessage>
                                                                           .Handle<HttpRequestException>()
-                                                                          .OrResult(result => result.StatusCode >= HttpStatusCode.InternalServerError || result.StatusCode == HttpStatusCode.RequestTimeout)
+                                                                          .OrResult(result => result.StatusCode is >= HttpStatusCode.InternalServerError or HttpStatusCode.RequestTimeout)
                                                                           .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(1)))
                                                           .Build()
                                                           .CreateClient();
 
-			var response = await clientWithRetry.GetAsync($"{_server.Urls[0]}{_endpointUri}");
+			var response = await clientWithRetry.GetAsync($"{_server.Urls[0]}{EndpointUri}");
             
 			Assert.Equal(2, _server.LogEntries.Count());
             Assert.Single(_server.LogEntries, le => (HttpStatusCode)le.ResponseMessage.StatusCode == HttpStatusCode.OK);
             Assert.Single(_server.LogEntries, le => (HttpStatusCode)le.ResponseMessage.StatusCode == HttpStatusCode.RequestTimeout);
 
 			Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-            Assert.Equal("Hello world!", await response.Content.ReadAsStringAsync());
+            Assert.Equal(HttpContentValue, await response.Content.ReadAsStringAsync());
         }
     }
 }
