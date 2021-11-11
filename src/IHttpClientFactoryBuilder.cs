@@ -8,66 +8,78 @@
     using System.Security.Cryptography.X509Certificates;
 
     /// <summary>
-    /// Defines a builder for producing factories that in turn construct pre-configured <see cref="HttpClient"/> instances.
+    /// An abstraction for a builder that can produce factories that in turn can create pre-configured <see cref="HttpClient"/> instances.
     /// </summary>
     public interface IHttpClientFactoryBuilder
     {
         /// <summary>
         /// Sets the base URL to use with the client.
         /// </summary>
+        /// <param name="baseUrl">The base URL to set on the client.</param>
         IHttpClientFactoryBuilder WithBaseUrl(string baseUrl);
 
         /// <summary>
         /// Sets the base URL to use with the client.
         /// </summary>
+        /// <param name="baseUrl">The base URL to set on the client.</param>
         IHttpClientFactoryBuilder WithBaseUrl(Uri baseUrl);
 
         /// <summary>
         /// Adds a default header to be sent with each request.
         /// </summary>
+        /// <param name="name">Name of the header.</param>
+        /// <param name="value">Value of the header.</param>
         IHttpClientFactoryBuilder WithDefaultHeader(string name, string value);
 
         /// <summary>
         /// Adds a collection of default headers to be sent with each request.
         /// </summary>
+        /// <param name="headers">The dictionary of headers to be sent with each request.</param>
         IHttpClientFactoryBuilder WithDefaultHeaders(IDictionary<string, string> headers);
 
         /// <summary>
-        /// Configures one or more SSL certificates to use.
+        /// Configure one or more SSL certificates to use.
         /// </summary>
+        /// <param name="certificate">One or more certificates to use.</param>
         IHttpClientFactoryBuilder WithCertificate(params X509Certificate2[] certificate);
 
         /// <summary>
         /// Configure one or more SSL certificates to use.
         /// </summary>
+        /// <param name="certificates">The collection containing certificates to use.</param>
         IHttpClientFactoryBuilder WithCertificates(IEnumerable<X509Certificate2> certificates);
 
         /// <summary>
         /// Adds one or more Polly policies to the error policy processing pipeline.
         /// </summary>
+        /// <param name="policy">One or more policies to add.</param>
         /// <remarks>Policies will be evaluated in the order of their configuration.</remarks>
         IHttpClientFactoryBuilder WithPolicy(params IAsyncPolicy<HttpResponseMessage>[] policy);
 
         /// <summary>
         /// Adds multiple Polly policies to the error policy processing pipeline.
         /// </summary>
+        /// <param name="policies">The collection containing policies to add.</param>
         /// <remarks>Policies will be evaluated in the order of their configuration.</remarks>
         IHttpClientFactoryBuilder WithPolicies(IEnumerable<IAsyncPolicy<HttpResponseMessage>> policies);
 
         /// <summary>
         /// Sets the timespan to wait before requests sent by the constructed client time out.
         /// </summary>
+        /// <param name="timeout">The request timeout value.</param>
         IHttpClientFactoryBuilder WithRequestTimeout(in TimeSpan timeout);
 
         /// <summary>
         /// Adds one or more additional message handlers to the processing pipeline.
         /// </summary>
+        /// <param name="handler">One or more message handlers to add.</param>
         /// <exception cref="T:System.ArgumentNullException"><paramref name="handler"/> is <see langword="null"/>.</exception>
         IHttpClientFactoryBuilder WithMessageHandler(params DelegatingHandler[] handler);
 
         /// <summary>
         /// Adds additional message handlers to the processing pipeline.
         /// </summary>
+        /// <param name="handlers">The collection containing the message handlers to add.</param>
         /// <exception cref="T:System.ArgumentNullException">One of items in <paramref name="handlers"/> is <see langword="null"/>.</exception>
         IHttpClientFactoryBuilder WithMessageHandlers(IEnumerable<DelegatingHandler> handlers);
 

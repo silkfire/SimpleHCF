@@ -27,17 +27,14 @@
             try
             {
                 var certificates = new List<X509Certificate2>();
-                certificates.AddRange(store.Certificates.OfType<X509Certificate2>());
+                certificates.AddRange(store.Certificates);
                 IEnumerable<X509Certificate2> matchingCertificates = certificates;
                 matchingCertificates = matchingCertificates.Where(c => HasOid(c, AspNetHttpsOid));
                 
                 var now = DateTimeOffset.Now;
-                var validCertificates = matchingCertificates
-                        .Where(c => c.NotBefore <= now &&
-                            now <= c.NotAfter &&
-                            IsExportable(c)
-                            && MatchesVersion(c))
-                        .ToArray();
+                var validCertificates = matchingCertificates.Where(c =>    c.NotBefore <= now && now <= c.NotAfter
+                                                                        && IsExportable(c) && MatchesVersion(c))
+                                                            .ToArray();
 
                 return validCertificates.FirstOrDefault();
             }
@@ -47,11 +44,10 @@
             }
         }
 
-        private static bool MatchesVersion(X509Certificate2 c)
+        private static bool MatchesVersion(X509Certificate2 certificate)
         {
-            var byteArray = c.Extensions.OfType<X509Extension>()
-                                        .Single(e => AspNetHttpsOid == e.Oid.Value)
-                                        .RawData;
+            var byteArray = certificate.Extensions.Single(e => e.Oid is { Value: AspNetHttpsOid })
+                                                  .RawData;
 
             //assuming AspNetHttpsCertificateVersion == 0 since it is the default at the moment
             //for more details, take a look here: https://github.com/dotnet/aspnetcore/blob/master/src/Shared/CertificateGeneration/CertificateManager.cs#L37
@@ -62,6 +58,7 @@
             }
 
             // Version is in the only byte of the byte array.
+            // ReSharper disable once ConditionIsAlwaysTrueOrFalse
             return byteArray[0] >= 0;
         }
 
@@ -72,8 +69,15 @@
                 // For the first run experience we don't need to know if the certificate can be exported.
                 return true;
 #else
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
                 return    c.GetRSAPrivateKey() is RSACryptoServiceProvider rsaPrivateKey && rsaPrivateKey.CspKeyContainerInfo.Exportable
-                       || c.GetRSAPrivateKey() is RSACng cngPrivateKey && cngPrivateKey.Key.ExportPolicy == CngExportPolicies.AllowExport;
+                          || c.GetRSAPrivateKey() is RSACng cngPrivateKey && cngPrivateKey.Key.ExportPolicy == CngExportPolicies.AllowExport;
+            }
+            else
+            {
+                return true;
+            }
 #endif
         }
 

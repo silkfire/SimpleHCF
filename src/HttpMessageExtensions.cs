@@ -4,6 +4,9 @@
 
     using System.Net.Http;
 
+    /// <summary>
+    /// Extension methods for a HTTP message.
+    /// </summary>
     public static class HttpMessageExtensions
     {
         private static readonly HttpRequestOptionsKey<Context> PolicyExecutionContextKey = new("PolicyExecutionContext");

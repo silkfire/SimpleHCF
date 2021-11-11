@@ -26,11 +26,19 @@
 
         internal HttpClientFactoryBuilder() { }
 
+        /// <summary>
+        /// Sets the base URL to use with the client.
+        /// </summary>
+        /// <param name="baseUrl">The base URL to set on the client.</param>
         public IHttpClientFactoryBuilder WithBaseUrl(string baseUrl)
         {
             return WithBaseUrl(new Uri(baseUrl));
         }
 
+        /// <summary>
+        /// Sets the base URL to use with the client.
+        /// </summary>
+        /// <param name="baseUrl">The base URL to set on the client.</param>
         public IHttpClientFactoryBuilder WithBaseUrl(Uri baseUrl)
         {
             _baseUrl = baseUrl ?? throw new ArgumentNullException(nameof(baseUrl));
@@ -38,6 +46,11 @@
             return this;
         }
 
+        /// <summary>
+        /// Adds a default header to be sent with each request.
+        /// </summary>
+        /// <param name="name">Name of the header.</param>
+        /// <param name="value">Value of the header.</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public IHttpClientFactoryBuilder WithDefaultHeader(string name, string value)
         {
@@ -50,12 +63,16 @@
             return this;
         }
 
+        /// <summary>
+        /// Adds a collection of default headers to be sent with each request.
+        /// </summary>
+        /// <param name="headers">The dictionary of headers to be sent with each request.</param>
         public IHttpClientFactoryBuilder WithDefaultHeaders(IDictionary<string, string> headers)
         {
             if (headers == null) throw new ArgumentNullException(nameof(headers));
 
-            foreach(var kvp in headers)
-                WithDefaultHeader(kvp.Key, kvp.Value);
+            foreach(var (key, value) in headers)
+                WithDefaultHeader(key, value);
 
             return this;
         }
@@ -67,11 +84,19 @@
             _certificates.Add(certificate);
         }
 
+        /// <summary>
+        /// Configure one or more SSL certificates to use.
+        /// </summary>
+        /// <param name="certificate">One or more certificates to use.</param>
         public IHttpClientFactoryBuilder WithCertificate(params X509Certificate2[] certificate)
         {
             return WithCertificates(certificate);
         }
 
+        /// <summary>
+        /// Configure one or more SSL certificates to use.
+        /// </summary>
+        /// <param name="certificates">The collection containing certificates to use.</param>
         public IHttpClientFactoryBuilder WithCertificates(IEnumerable<X509Certificate2> certificates)
         {
             if (certificates == null) throw new ArgumentNullException(nameof(certificates));
@@ -93,11 +118,21 @@
             _policies.Add(policy);
         }
 
+        /// <summary>
+        /// Adds one or more Polly policies to the error policy processing pipeline.
+        /// </summary>
+        /// <param name="policy">One or more policies to add.</param>
+        /// <remarks>Policies will be evaluated in the order of their configuration.</remarks>
         public IHttpClientFactoryBuilder WithPolicy(params IAsyncPolicy<HttpResponseMessage>[] policy)
         {
             return WithPolicies(policy);
         }
 
+        /// <summary>
+        /// Adds multiple Polly policies to the error policy processing pipeline.
+        /// </summary>
+        /// <param name="policies">The collection containing policies to add.</param>
+        /// <remarks>Policies will be evaluated in the order of their configuration.</remarks>
         public IHttpClientFactoryBuilder WithPolicies(IEnumerable<IAsyncPolicy<HttpResponseMessage>> policies)
         {
             if (policies == null) throw new ArgumentNullException(nameof(policies));
@@ -112,6 +147,10 @@
             return this;
         }
 
+        /// <summary>
+        /// Sets the timespan to wait before requests sent by the constructed client time out.
+        /// </summary>
+        /// <param name="timeout">The request timeout value.</param>
         public IHttpClientFactoryBuilder WithRequestTimeout(in TimeSpan timeout)
         {
             _timeout = timeout;
@@ -130,11 +169,21 @@
             return this;
         }
 
+        /// <summary>
+        /// Adds one or more additional message handlers to the processing pipeline.
+        /// </summary>
+        /// <param name="handler">One or more message handlers to add.</param>
+        /// <exception cref="T:System.ArgumentNullException"><paramref name="handler"/> is <see langword="null"/>.</exception>
         public IHttpClientFactoryBuilder WithMessageHandler(params DelegatingHandler[] handler)
         {
             return WithMessageHandlers(handler);
         }
 
+        /// <summary>
+        /// Adds additional message handlers to the processing pipeline.
+        /// </summary>
+        /// <param name="handlers">The collection containing the message handlers to add.</param>
+        /// <exception cref="T:System.ArgumentNullException">One of items in <paramref name="handlers"/> is <see langword="null"/>.</exception>
         public IHttpClientFactoryBuilder WithMessageHandlers(IEnumerable<DelegatingHandler> handlers)
         {
             if (handlers == null) throw new ArgumentNullException(nameof(handlers));
@@ -149,11 +198,23 @@
             return this;
         }
 
+        /// <summary>
+        /// Adds an exception handler to transform any thrown <see cref="HttpRequestException"/>s into more user friendly ones (or to add more details).
+        /// </summary>
+        /// <param name="exceptionHandlingPredicate">If the provided delegate evaluates to <see langword="false"/> when executed, the <see cref="HttpRequestException"/> is thrown as-is.</param>
+        /// <param name="exceptionHandler">A delegate to transform the active exception. If it returns <see langword="null"/>, the exception will not be thrown.</param>
+        /// <param name="requestExceptionEventHandler">An event handler that is called when an <see cref="HttpRequestException"/> is thrown.</param>
+        /// <param name="transformedRequestExceptionEventHandler">An event handler that is called when an <see cref="HttpRequestException"/> has been successfully transformed into an <see cref="Exception"/>.</param>
+        /// <remarks>This adds a call to <see cref="HttpResponseMessage.EnsureSuccessStatusCode"/>, thus ensuring that <see cref="HttpRequestException"/> will get thrown on a non-success response.</remarks>
         public IHttpClientFactoryBuilder WithMessageExceptionHandler(Func<HttpRequestException, bool> exceptionHandlingPredicate,
                                                               Func<HttpRequestException, Exception> exceptionHandler,
                                                               EventHandler<HttpRequestException> requestExceptionEventHandler = null,
                                                               EventHandler<Exception> transformedRequestExceptionEventHandler = null) => WithMessageHandler(new ExceptionTranslatorRequestMiddleware(exceptionHandlingPredicate, exceptionHandler, requestExceptionEventHandler, transformedRequestExceptionEventHandler));
 
+        /// <summary>
+        /// Substitutes the default primary message handler with the specified one.
+        /// </summary>
+        /// <param name="defaultPrimaryMessageHandler">The message handler to substitute the default primary message handler with.</param>
         public IHttpClientFactoryBuilder WithPrimaryMessageHandler(SocketsHttpHandler defaultPrimaryMessageHandler)
         {
             _customPrimaryMessageHandler = defaultPrimaryMessageHandler ?? throw new ArgumentNullException(nameof(defaultPrimaryMessageHandler));
@@ -161,6 +222,10 @@
             return this;
         }
 
+        /// <summary>
+        /// Configures the primary message handler before the client is instantiated.
+        /// </summary>
+        /// <param name="configurator">A delegate to configure the primary message handler before the client is instantiated.</param>
         public IHttpClientFactoryBuilder WithPrimaryMessageHandlerConfigurator(Action<SocketsHttpHandler> configurator)
         {
             _primaryMessageHandlerConfigurator = configurator ?? throw new ArgumentNullException(nameof(configurator));
@@ -168,11 +233,17 @@
             return this;
         }
 
+        /// <summary>
+        /// Initializes a HTTP client factory with the given configuration.
+        /// </summary>
         public IHttpClientFactory Build()
         {
             return new SimpleHttpClientFactory(this);
         }
 
+        /// <summary>
+        /// Instantiates the pre-configured HTTP client.
+        /// </summary>
         public HttpClient CreateClient()
         {
             var primaryMessageHandler = _customPrimaryMessageHandler ?? new SocketsHttpHandler();
@@ -259,7 +330,7 @@
                 if (_middlewareHandlers.Count > 0)
                 {
                     lastMiddleware.InnerHandler = rootPolicyHandler;
-                    client = new HttpClient(_middlewareHandlers.FirstOrDefault(), false);
+                    client = new HttpClient(_middlewareHandlers.First(), false);
                 }
                 else
                     client = new HttpClient(rootPolicyHandler, false);
@@ -270,7 +341,7 @@
             HttpClient InitializeClientOnlyWithMiddleware()
             {
                 lastMiddleware.InnerHandler = primaryMessageHandler;
-                var client = new HttpClient(_middlewareHandlers.FirstOrDefault(), false);
+                var client = new HttpClient(_middlewareHandlers.First(), false);
 
                 return client;
             }

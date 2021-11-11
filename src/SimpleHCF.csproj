@@ -1,14 +1,14 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net5.0</TargetFrameworks>
+    <TargetFrameworks>net6.0</TargetFrameworks>
     <Authors>Gabriel Bider, Michael Yarichuk</Authors>
     <PackageTags>httpclient, httpclientfactory, polly</PackageTags>
-    <Copyright>Copyright © 2021</Copyright>
+    <Copyright>Copyright © 2022</Copyright>
     <PackageProjectUrl>https://github.com/silkfire/SimpleHCF</PackageProjectUrl>
     <Description>A lightweight HttpClient factory with minimum dependencies that respects DNS changes and integrates Polly policies into the HTTP client.</Description>
-    <Version>3.0.1</Version>
-    <AssemblyVersion>3.0.1.0</AssemblyVersion>
+    <Version>4.0.1</Version>
+    <AssemblyVersion>4.0.1</AssemblyVersion>
   </PropertyGroup>
 
   <ItemGroup>
