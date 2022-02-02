@@ -207,9 +207,9 @@
         /// <param name="transformedRequestExceptionEventHandler">An event handler that is called when an <see cref="HttpRequestException"/> has been successfully transformed into an <see cref="Exception"/>.</param>
         /// <remarks>This adds a call to <see cref="HttpResponseMessage.EnsureSuccessStatusCode"/>, thus ensuring that <see cref="HttpRequestException"/> will get thrown on a non-success response.</remarks>
         public IHttpClientFactoryBuilder WithMessageExceptionHandler(Func<HttpRequestException, bool> exceptionHandlingPredicate,
-                                                              Func<HttpRequestException, Exception> exceptionHandler,
-                                                              EventHandler<HttpRequestException> requestExceptionEventHandler = null,
-                                                              EventHandler<Exception> transformedRequestExceptionEventHandler = null) => WithMessageHandler(new ExceptionTranslatorRequestMiddleware(exceptionHandlingPredicate, exceptionHandler, requestExceptionEventHandler, transformedRequestExceptionEventHandler));
+                                                                     Func<HttpRequestException, Exception> exceptionHandler,
+                                                                     EventHandler<HttpRequestException> requestExceptionEventHandler = null,
+                                                                     EventHandler<Exception> transformedRequestExceptionEventHandler = null) => WithMessageHandler(new ExceptionTranslatorRequestMiddleware(exceptionHandlingPredicate, exceptionHandler, requestExceptionEventHandler, transformedRequestExceptionEventHandler));
 
         /// <summary>
         /// Substitutes the default primary message handler with the specified one.
