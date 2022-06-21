@@ -14,6 +14,7 @@ namespace SimpleHCF.Tests
     using System.Net.Http;
     using System.Reflection;
     using System.Threading.Tasks;
+    using HttpVersion = SimpleHCF.HttpVersion;
 
     public sealed class BasicClientBuilderTests : IDisposable
     {
@@ -153,13 +154,24 @@ namespace SimpleHCF.Tests
         }
 
         [Fact]
-        public void Should_set_timeout_on_the_client()
+        public void Should_set_timeout_on_client()
         {
             var timeout = TimeSpan.FromSeconds(999);
 
             var client = HttpClientFactoryBuilder.Create().WithRequestTimeout(timeout).Build().CreateClient();
 
             Assert.Equal(timeout, client.Timeout);
+        }
+
+        [Fact]
+        public void Should_set_HTTP_version_on_client()
+        {
+            foreach (var httpVersion in Enum.GetValues<HttpVersion>())
+            {
+                var client = HttpClientFactoryBuilder.Create().WithHttpVersion(httpVersion).Build().CreateClient();
+
+                Assert.Equal(HttpClientFactoryBuilder.HttpVersionMapper[httpVersion], client.DefaultRequestVersion);
+            }
         }
 
         [Fact]

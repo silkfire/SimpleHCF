@@ -70,6 +70,12 @@
         IHttpClientFactoryBuilder WithRequestTimeout(in TimeSpan timeout);
 
         /// <summary>
+        /// Sets the HTTP version used when performing subsequent requests with the constructed client.
+        /// </summary>
+        /// <param name="version">The HTTP version to set on the constructed client.</param>
+        IHttpClientFactoryBuilder WithHttpVersion(in HttpVersion version);
+
+        /// <summary>
         /// Adds one or more additional message handlers to the processing pipeline.
         /// </summary>
         /// <param name="handler">One or more message handlers to add.</param>

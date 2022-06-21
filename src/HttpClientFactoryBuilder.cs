@@ -6,6 +6,7 @@
 
     using System;
     using System.Collections.Generic;
+    using System.Collections.ObjectModel;
     using System.Linq;
     using System.Net.Http;
     using System.Net.Security;
@@ -19,10 +20,19 @@
         private readonly List<X509Certificate2> _certificates = new();
         private readonly List<IAsyncPolicy<HttpResponseMessage>> _policies = new();
         private TimeSpan? _timeout;
+        private HttpVersion? _httpVersion;
         private readonly List<DelegatingHandler> _middlewareHandlers = new();
         private SocketsHttpHandler _customPrimaryMessageHandler;
         private Action<SocketsHttpHandler> _primaryMessageHandlerConfigurator;
 
+        internal static IReadOnlyDictionary<HttpVersion, Version> HttpVersionMapper { get; } = new ReadOnlyDictionary<HttpVersion, Version>(new Dictionary<HttpVersion, Version>
+        {
+            [HttpVersion.Unknown]    = System.Net.HttpVersion.Unknown,
+            [HttpVersion.Version1_0] = System.Net.HttpVersion.Version10,
+            [HttpVersion.Version1_1] = System.Net.HttpVersion.Version11,
+            [HttpVersion.Version2_0] = System.Net.HttpVersion.Version20,
+            [HttpVersion.Version3_0] = System.Net.HttpVersion.Version30,
+        });
 
         internal HttpClientFactoryBuilder() { }
 
@@ -155,6 +165,17 @@
         {
             _timeout = timeout;
 
+            return this;
+        }
+
+        /// <summary>
+        /// Sets the HTTP version used when performing subsequent requests with the constructed client.
+        /// </summary>
+        /// <param name="version">The HTTP version to set on the constructed client.</param>
+        public IHttpClientFactoryBuilder WithHttpVersion(in HttpVersion version)
+        {
+            _httpVersion = version;
+            
             return this;
         }
 
@@ -293,6 +314,7 @@
             InitializeDefaultHeadersIfNeeded();
 
             if (_timeout.HasValue) client.Timeout = _timeout.Value;
+            if (_httpVersion.HasValue) client.DefaultRequestVersion = HttpVersionMapper[_httpVersion.Value];
 
             return client;
 

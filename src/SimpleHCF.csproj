@@ -7,8 +7,9 @@
     <Copyright>Copyright © 2022</Copyright>
     <PackageProjectUrl>https://github.com/silkfire/SimpleHCF</PackageProjectUrl>
     <Description>A lightweight HttpClient factory with minimum dependencies that respects DNS changes and integrates Polly policies into the HTTP client.</Description>
-    <Version>4.0.2</Version>
-    <AssemblyVersion>4.0.2.0</AssemblyVersion>
+    <Version>4.1.0</Version>
+    <AssemblyVersion>4.1.0.0</AssemblyVersion>
+    <PackageReleaseNotes>4.1.0 Added a method to set the HTTP version for subsequent requests on the constructed client.</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
