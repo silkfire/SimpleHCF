@@ -142,7 +142,7 @@
             Assert.IsType<HttpRequestException>(exception.InnerException);
             Assert.Empty(_server.LogEntries);
             A.CallTo(() => requestExceptionEventHandler.Invoke(A<ExceptionTranslatorRequestMiddleware>.That.IsNotNull(), A<HttpRequestException>.That.IsNotNull())).MustHaveHappenedOnceExactly();
-            A.CallTo(() => transformedRequestExceptionEventHandler.Invoke(A<ExceptionTranslatorRequestMiddleware>.That.IsNotNull(), A<Exception>.That.IsNotNull())).MustNotHaveHappened();
+            A.CallTo(() => transformedRequestExceptionEventHandler.Invoke(A<ExceptionTranslatorRequestMiddleware>._, A<Exception>._)).MustNotHaveHappened();
         }
 
         [Fact]

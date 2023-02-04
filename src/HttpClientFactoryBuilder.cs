@@ -13,7 +13,7 @@
     using System.Runtime.CompilerServices;
     using System.Security.Cryptography.X509Certificates;
 
-    public partial class HttpClientFactoryBuilder : IHttpClientFactoryInstantiator
+    public partial class HttpClientFactoryBuilder : IHttpClientFactoryBuilder
     {        
         private Uri _baseUrl;
         private readonly Dictionary<string, string> _defaultHeaders = new();
@@ -265,7 +265,7 @@
         /// <summary>
         /// Instantiates the pre-configured HTTP client.
         /// </summary>
-        public HttpClient CreateClient()
+        internal HttpClient CreateClient()
         {
             var primaryMessageHandler = _customPrimaryMessageHandler ?? new SocketsHttpHandler();
             InitializePrimaryMessageHandler(primaryMessageHandler, out var rootPolicyHandler);

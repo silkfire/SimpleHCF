@@ -1,5 +1,6 @@
 namespace SimpleHCF.Tests
 {
+    using HttpVersion = HttpVersion;
     using MessageHandlers;
 
     using WireMock.RequestBuilders;
@@ -14,7 +15,6 @@ namespace SimpleHCF.Tests
     using System.Net.Http;
     using System.Reflection;
     using System.Threading.Tasks;
-    using HttpVersion = SimpleHCF.HttpVersion;
 
     public sealed class BasicClientBuilderTests : IDisposable
     {

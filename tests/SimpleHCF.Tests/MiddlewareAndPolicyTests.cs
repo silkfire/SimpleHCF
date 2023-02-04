@@ -151,7 +151,7 @@
                                                           .CreateClient();
 
             var response = await clientWithRetry.GetAsync($"{_server.Urls[0]}{EndpointUri}");
-            var eventManager = new string('c', 78);
+
             A.CallTo(() => requestEventHandler.Invoke(eventMessageHandler, A<EventMessageHandler.RequestEventArgs>.That.Matches(e => e.Request.Headers.Single(h => h.Key == TrafficRecorderMessageHandler.HeaderName).Value.FirstOrDefault() == TrafficRecorderMessageHandler.HeaderValue))).MustHaveHappenedOnceExactly();
 
             Assert.Single(trafficRecorderMessageHandler.Traffic);

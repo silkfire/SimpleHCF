@@ -4,16 +4,16 @@
 
     internal class SimpleHttpClientFactory : IHttpClientFactory
     {
-        private readonly IHttpClientFactoryInstantiator _httpClientFactoryInstantiator;
+        private readonly HttpClientFactoryBuilder _httpClientFactoryBuilder;
 
-        public SimpleHttpClientFactory(IHttpClientFactoryInstantiator httpClientFactoryInstantiator)
+        public SimpleHttpClientFactory(HttpClientFactoryBuilder httpClientFactoryBuilder)
         {
-            _httpClientFactoryInstantiator = httpClientFactoryInstantiator;
+            _httpClientFactoryBuilder = httpClientFactoryBuilder;
         }
 
         public HttpClient CreateClient()
         {
-            return _httpClientFactoryInstantiator.CreateClient();
+            return _httpClientFactoryBuilder.CreateClient();
         }
     }
 }
