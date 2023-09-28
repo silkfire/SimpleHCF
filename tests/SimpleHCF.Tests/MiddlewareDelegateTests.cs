@@ -178,15 +178,18 @@
 
             var trafficRecorderMessageHandler = new TrafficRecorderMessageHandler(actuallyVisitedMiddleware);
             var requestEventHandler = A.Fake<EventHandler<EventMessageHandler.RequestEventArgs>>();
+            var responseEventHandler = A.Fake<EventHandler<EventMessageHandler.ResponseEventArgs>>();
 
             var eventMessageHandler = new EventMessageHandler(actuallyVisitedMiddleware);
             eventMessageHandler.Request += requestEventHandler;
+            eventMessageHandler.Response += responseEventHandler;
 
             var client = factory(eventMessageHandler, trafficRecorderMessageHandler).Build().CreateClient();
 
             await client.GetAsync(endpoint);
 
-            A.CallTo(() => requestEventHandler.Invoke(eventMessageHandler, A<EventMessageHandler.RequestEventArgs>.That.Matches(e => e.Request.Headers.Single(h => h.Key == TrafficRecorderMessageHandler.HeaderName).Value.FirstOrDefault() == TrafficRecorderMessageHandler.HeaderValue))).MustHaveHappenedOnceExactly();
+                  A.CallTo(() => requestEventHandler .Invoke(eventMessageHandler, A<EventMessageHandler.RequestEventArgs> .That.Matches(e => e.Request .Headers.Single(h => h.Key == TrafficRecorderMessageHandler.HeaderName).Value.FirstOrDefault() == TrafficRecorderMessageHandler.HeaderValue))).MustHaveHappenedOnceExactly()
+            .Then(A.CallTo(() => responseEventHandler.Invoke(eventMessageHandler, A<EventMessageHandler.ResponseEventArgs>.That.Matches(e => e.Response.Headers.Single(h => h.Key == TrafficRecorderMessageHandler.HeaderName).Value.FirstOrDefault() == TrafficRecorderMessageHandler.HeaderValue))).MustHaveHappenedOnceExactly());
 
             Assert.Single(trafficRecorderMessageHandler.Traffic);
 
