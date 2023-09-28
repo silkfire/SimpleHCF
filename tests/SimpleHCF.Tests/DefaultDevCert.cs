@@ -16,7 +16,7 @@
 
 
         /// <summary>
-        /// Get the default ASP.Net Core developer certificate. 
+        /// Get the default ASP.Net Core developer certificate.
         /// </summary>
         /// <returns>Default development certificate or null if not found</returns>
         /// <remarks>make sure that the certificate is 'trusted' by running in .Net CLI 'dotnet dev-certs https --trust'</remarks>
@@ -30,7 +30,7 @@
                 certificates.AddRange(store.Certificates);
                 IEnumerable<X509Certificate2> matchingCertificates = certificates;
                 matchingCertificates = matchingCertificates.Where(c => HasOid(c, AspNetHttpsOid));
-                
+
                 var now = DateTimeOffset.Now;
                 var validCertificates = matchingCertificates.Where(c =>    c.NotBefore <= now && now <= c.NotAfter
                                                                         && IsExportable(c) && MatchesVersion(c))

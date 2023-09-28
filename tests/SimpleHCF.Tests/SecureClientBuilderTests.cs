@@ -75,7 +75,7 @@
         {
             var client = CreateClient();
             var response = await client.GetAsync($"{_server.Urls[0]}{EndpointUri}");
-            
+
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
             Assert.Equal(HttpContentValue, await response.Content.ReadAsStringAsync());
         }

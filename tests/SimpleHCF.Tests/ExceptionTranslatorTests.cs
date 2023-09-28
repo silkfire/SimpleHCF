@@ -34,8 +34,8 @@
                     Response.Create()
                         .WithStatusCode(HttpStatusCode.OK)
                         .WithHeader("Content-Type", "text/plain")
-                        .WithBody(HttpContentValue));       
-            
+                        .WithBody(HttpContentValue));
+
             _server
                 .Given(Request.Create()
                     .WithPath(EndpointUriTimeout)
@@ -161,7 +161,7 @@
 
             await Assert.ThrowsAsync<HttpRequestException>(() => clientWithRetry.GetAsync($"{_server.Urls[0]}{EndpointUriTimeout}"));
             Assert.Equal(4, _server.LogEntries.Count());
-            
+
         }
 
         [Fact]

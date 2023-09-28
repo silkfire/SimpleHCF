@@ -14,7 +14,7 @@
     using System.Security.Cryptography.X509Certificates;
 
     public partial class HttpClientFactoryBuilder : IHttpClientFactoryBuilder
-    {        
+    {
         private Uri _baseUrl;
         private readonly Dictionary<string, string> _defaultHeaders = new();
         private readonly List<X509Certificate2> _certificates = new();
@@ -90,7 +90,7 @@
         private void WithCertificate(X509Certificate2 certificate)
         {
             if (certificate == null) throw new ArgumentNullException(nameof(certificate));
-            
+
             _certificates.Add(certificate);
         }
 
@@ -175,7 +175,7 @@
         public IHttpClientFactoryBuilder WithHttpVersion(in HttpVersion version)
         {
             _httpVersion = version;
-            
+
             return this;
         }
 

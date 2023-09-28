@@ -35,9 +35,9 @@
             var context = GetOrCreatePolicyExecutionContext(request, ref cleanUpContext);
 
             //do not await for the task so the async state machine won't grow big
-            var responseTask = 
+            var responseTask =
                 _policy.ExecuteAsync(
-                    async (c, ct) => 
+                    async (c, ct) =>
                             await base.SendAsync(request, cancellationToken), context, cancellationToken)
                        .ContinueWith(t =>
                        {
